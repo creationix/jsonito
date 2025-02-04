@@ -1,0 +1,97 @@
+
+document = value ;
+
+file = { ( comment | value ) };
+
+comment = "//", { utf8_char }, "\n";
+
+(*
+  A value is a scalar, map, list, or scope.
+  A scalar is a varint, string, integer, decimal, reference, true, false, or null.
+  A map is a key/value pair.
+  A list is a sequence of values.
+  A scope is a set of definitions for references.
+
+value
+  = varint, 
+    ( b64_string | string
+    | integer | decimal
+    | reference
+    )
+  | map | list | scope
+  | true | false | null
+  ;
+
+(* Zero or more key/value pairs, similar to JSON object *)
+map = "{", { value, value }, "}";
+
+(* Zero ot more values, similar to JSON array *)
+list = "[", { value }, "]";
+
+(* inline string such as `key:` *)
+b64_string = ":";
+(* length prefixed string such as `5$Hello` *)
+string = "$", { utf8_char };
+
+
+(* integers are encoded as zigzag(N) *)
+integer = "+";
+(* power of 10 encoded using zigzag(exponent) *)
+decimal = "|", varint, ".";
+
+true = "!";
+false = "~";
+null = "?";
+
+(* Scope injects definitions for references into a value *)
+scope = "(", 
+  ( inline_dictionary
+  | external_dictionary
+  ), value,")";
+
+(* Inline values that appear more than once in a document *)
+inline_dictionary = { value };
+(* Reference to external document as integer defined by the encoder *)
+external_dictionary = varint, "#";
+(* Integer index into current scope *)
+reference = "&";
+
+(*
+  An unsigned integer as zero or more digits.
+  The leftmost is most significant in base 64.
+  Encoding zero is an zero-length string.
+
+  0 -> ""
+  1 -> "1"
+  10 -> "a"
+  35 -> "z"
+  36 -> "A"
+  61 -> "Z"
+  62 -> "-"
+  63 -> "_"
+  64 => "10"
+*)
+varint = { digit };
+
+(*
+  This is the same digits as url-safe base64, but used as normal integer digits.
+  Note that the order is slightly different to be an extension of typical hexadecimal.
+*)
+digit
+  = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7"
+  | "8" | "9" | "a" | "b" | "c" | "d" | "e" | "f"
+  | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n"
+  | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v"
+  | "w" | "x" | "y" | "z" | "A" | "B" | "C" | "D"
+  | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L"
+  | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T"
+  | "U" | "V" | "W" | "X" | "Y" | "Z" | "-" | "_"
+  ;
+
+(* Top-level indexing with byte offsets and name for random access of archive file *)
+archive = 
+    {   "JITO\n",
+        varint, "\n",
+        varint, (b64_string | string), "\n",
+        value, "\n" 
+    };

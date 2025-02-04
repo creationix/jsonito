@@ -1,0 +1,28 @@
+// Pretty-printed with no references
+{ menu: {
+  id: file:
+  value: File:
+  popup: {
+    menuitem: [
+      { value: New: onclick: e$CreateNewDoc() }
+      { value: Open: onclick: 9$OpenDoc() }
+      { value: Close: onclick: a$CloseDoc() }
+    ]
+  }
+} }
+
+// Pretty-printed with common values factored out
+( value: onclick: { menu: {
+  id: file:
+  & File:
+  popup: {
+    menuitem: [
+      { & New: 1& e$CreateNewDoc() }
+      { & Open: 1& 9$OpenDoc() }
+      { & Close: 1& a$CloseDoc() }
+    ]
+  }
+} } )
+
+// Whitespace trimmed
+(value:onclick:{menu:{id:file:&File:popup:{menuitem:[{&New:1&e$CreateNewDoc()}{&Open:1&9$OpenDoc()}{&Close:1&a$CloseDoc()}]}}})
