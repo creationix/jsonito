@@ -31,6 +31,9 @@ test('encode B64 digits', () => {
   expect(encodeVarint(14488732n)).toEqual('This')
   expect(encodeVarint(1180n)).toEqual('is')
   expect(encodeVarint(1955739563022n)).toEqual('strange')
+  expect(encodeVarint(BigInt(Number.MAX_SAFE_INTEGER))).toEqual('v________')
+  expect(encodeVarint(BigInt(Number.MAX_SAFE_INTEGER) + 1n)).toEqual('w00000000')
+  expect(encodeVarint(BigInt(Number.MAX_SAFE_INTEGER) - 1n)).toEqual('v_______-')
   expect(encodeSignedVarint(0n)).toEqual('')
   expect(encodeSignedVarint(-1n)).toEqual('1')
   expect(encodeSignedVarint(1n)).toEqual('2')
@@ -47,7 +50,7 @@ test('encode B64 digits', () => {
   expect(encodeSignedVarint(977869781511n)).toEqual('strange')
 })
 
-test('encode numbers', () => {
+test('encode integers', () => {
   expect(stringify(0)).toEqual('+')
   expect(stringify(1)).toEqual('2+')
   expect(stringify(12)).toEqual('o+')
@@ -105,11 +108,19 @@ test('encode numbers', () => {
   expect(stringify(64n ** 11n / -2n)).toEqual('___________+')
   expect(stringify(64n ** 10n / -2n)).toEqual('__________+')
   expect(stringify(Number.MIN_SAFE_INTEGER)).toEqual('________Z+')
+  expect(stringify(Number.MIN_SAFE_INTEGER / 2 - 1)).toEqual('v________+')
+  expect(stringify((Number.MIN_SAFE_INTEGER / 2 - 1) / 2)).toEqual('f________+')
+  expect(stringify((Number.MIN_SAFE_INTEGER / 2 - 1) / 4)).toEqual('7________+')
+  expect(stringify((Number.MIN_SAFE_INTEGER / 2 - 1) / 8)).toEqual('3________+')
+  expect(stringify((Number.MIN_SAFE_INTEGER / 2 - 1) / 16)).toEqual('1________+')
+  expect(stringify((Number.MIN_SAFE_INTEGER / 2 - 1) / 32)).toEqual('________+')
   expect(stringify(Number.MAX_SAFE_INTEGER)).toEqual('________-+')
-  expect(stringify(-Number.MAX_VALUE)).toEqual('1_KZz-nRVD|98.')
-  expect(stringify(Number.MAX_VALUE)).toEqual('1_KZz-nRVE|98.')
-  expect(stringify(-Number.MIN_VALUE)).toEqual('9|a7.')
-  expect(stringify(Number.MIN_VALUE)).toEqual('a|a7.')
+  expect(stringify(Number.MAX_SAFE_INTEGER / 2 + 1)).toEqual('w00000000+')
+  expect(stringify((Number.MAX_SAFE_INTEGER / 2 + 1) / 2)).toEqual('g00000000+')
+  expect(stringify((Number.MAX_SAFE_INTEGER / 2 + 1) / 4)).toEqual('800000000+')
+  expect(stringify((Number.MAX_SAFE_INTEGER / 2 + 1) / 8)).toEqual('400000000+')
+  expect(stringify((Number.MAX_SAFE_INTEGER / 2 + 1) / 16)).toEqual('200000000+')
+  expect(stringify((Number.MAX_SAFE_INTEGER / 2 + 1) / 32)).toEqual('100000000+')
   expect(stringify(-1229782938247303441n)).toEqual('28y8y8y8y8x+')
   expect(stringify(1229782938247303441n)).toEqual('28y8y8y8y8y+')
   expect(stringify(-2459565876494606882n)).toEqual('4h4h4h4h4h3+')
@@ -122,66 +133,44 @@ test('encode numbers', () => {
   expect(stringify(0xfn)).toEqual('u+')
   expect(stringify(0xffn)).toEqual('7-+')
   expect(stringify(0xfffn)).toEqual('1_-+')
-  expect(stringify(Math.PI)).toEqual('mkEokiJF2|t.')
-  expect(stringify(-Math.PI)).toEqual('mkEokiJF1|t.')
-  expect(stringify(Math.E)).toEqual('jk8qtAsha|t.')
-  expect(stringify(-Math.E)).toEqual('jk8qtAsh9|t.')
-  expect(stringify(Math.SQRT2)).toEqual('1Av6kkrUUg|v.')
-  expect(stringify(-Math.SQRT2)).toEqual('1Av6kkrUUf|v.')
-  expect(stringify(Math.SQRT1_2)).toEqual('OfzaadYs8|v.')
-  expect(stringify(-Math.SQRT1_2)).toEqual('OfzaadYs7|v.')
 })
 
-// test('encode rationals', () => {
-//   expect(stringify(1 / 3)).toEqual('2|3/') // 0.3333333333333333
-//   expect(stringify(-1 / 3)).toEqual('1|3/') // -0.3333333333333333
-//   expect(stringify(1 / 7)).toEqual('2|7/') // 0.14285714285714285
-//   expect(stringify(-1 / 7)).toEqual('1|7/') // -0.14285714285714285
-//   expect(stringify(6 / 7)).toEqual('c|7/') // 0.8571428571428571
-//   expect(stringify(-6 / 7)).toEqual('b|7/') // -0.8571428571428571
-//   expect(stringify(22 / 7)).toEqual('I|7/') // 3.142857142857143
-//   expect(stringify(12347 / 1234)).toEqual('61S|ji/') // 10.005672609400325
-//   expect(stringify(1000 / 1001)).toEqual('vg|fF/')
-//   expect(stringify(1 / 0)).toEqual('2|/') // Infinity
-//   expect(stringify(-1 / 0)).toEqual('1|/') // -Infinity
-//   expect(stringify(0 / 0)).toEqual('|/') // NaN
-// })
-
-// test('encode decimals', () => {
-//   expect(stringify(0.1)).toEqual('2|1.')
-//   expect(stringify(-0.1)).toEqual('1|1.')
-//   expect(stringify(10.1)).toEqual('3a|1.')
-//   expect(stringify(-10.1)).toEqual('39|1.')
-//   expect(stringify(1e10)).toEqual('2|k.')
-//   expect(stringify(-1e10)).toEqual('1|k.')
-//   expect(stringify(1e-10)).toEqual('2|j.')
-//   expect(stringify(-1e-10)).toEqual('1|j.')
-//   expect(stringify(0.123)).toEqual('3S|5.')
-//   expect(stringify(0.123456)).toEqual('Yi0|b.')
-//   expect(stringify(0.123456789)).toEqual('eJVEG|h.')
-//   expect(stringify(123.456789)).toEqual('eJVEG|b.')
-//   expect(stringify(123456.789)).toEqual('eJVEG|5.')
-//   expect(stringify(123456789e6)).toEqual('eJVEG|c.')
-//   expect(stringify(123456789e9)).toEqual('eJVEG|i.')
-//   expect(stringify(123456789e-20)).toEqual('eJVEG|D.')
-//   expect(stringify(123456789e20)).toEqual('eJVEG|E.')
-//   expect(stringify(123456789e-40)).toEqual('eJVEG|1f.')
-//   expect(stringify(123456789e40)).toEqual('eJVEG|1g.')
-//   expect(stringify(123456789e-80)).toEqual('eJVEG|2v.')
-//   expect(stringify(123456789e80)).toEqual('eJVEG|2w.')
-//   expect(stringify(123456789e-160)).toEqual('eJVEG|4_.')
-//   expect(stringify(123456789e160)).toEqual('eJVEG|50.')
-//   expect(stringify(123456789e-320)).toEqual('eJVEG|9_.')
-//   expect(stringify(10000 / 10001)).toEqual('1731d28Rfy|v.')
-//   expect(stringify(10000 / 10003)).toEqual('17271eVjl2|v.')
-//   expect(stringify(10000 / 10007)).toEqual('170iK6cGvu|v.')
-//   expect(stringify(Math.PI)).toEqual('mkEokiJF2|t.') // 3.141592653589793
-//   expect(stringify(-Math.PI)).toEqual('mkEokiJF1|t.') // -3.141592653589793
-//   expect(stringify(Math.E)).toEqual('jk8qtAsha|t.') // 2.718281828459045
-//   expect(stringify(-Math.E)).toEqual('jk8qtAsh9|t.') // -2.718281828459045
-//   expect(stringify(Math.SQRT2)).toEqual('1Av6kkrUUe|v.') // 1.4142135623730951
-//   expect(stringify(-Math.SQRT2)).toEqual('1Av6kkrUUd|v.') // -1.4142135623730951
-// })
+test('encode decimals', () => {
+  expect(stringify(0.1)).toEqual('2|1.')
+  expect(stringify(-0.1)).toEqual('1|1.')
+  expect(stringify(10.1)).toEqual('3a|1.')
+  expect(stringify(-10.1)).toEqual('39|1.')
+  expect(stringify(1e-10)).toEqual('2|j.')
+  expect(stringify(-1e-10)).toEqual('1|j.')
+  expect(stringify(0.123)).toEqual('3S|5.')
+  expect(stringify(0.123456)).toEqual('Yi0|b.')
+  expect(stringify(0.123456789)).toEqual('eJVEG|h.')
+  expect(stringify(123.456789)).toEqual('eJVEG|b.')
+  expect(stringify(123456.789)).toEqual('eJVEG|5.')
+  expect(stringify(123456789e9)).toEqual('eJVEG|i.')
+  expect(stringify(123456789e-20)).toEqual('eJVEG|D.')
+  expect(stringify(123456789e20)).toEqual('eJVEG|E.')
+  expect(stringify(123456789e-40)).toEqual('eJVEG|1f.')
+  expect(stringify(123456789e40)).toEqual('eJVEG|1g.')
+  expect(stringify(123456789e-80)).toEqual('eJVEG|2v.')
+  expect(stringify(123456789e80)).toEqual('eJVEG|2w.')
+  expect(stringify(123456789e-160)).toEqual('eJVEG|4_.')
+  expect(stringify(123456789e160)).toEqual('eJVEG|50.')
+  expect(stringify(123456789e-320)).toEqual('eJVEG|9_.')
+  expect(stringify(10000 / 10001)).toEqual('1731d28Rfw|v.')
+  expect(stringify(10000 / 10003)).toEqual('17271eVjl0|v.')
+  expect(stringify(10000 / 10007)).toEqual('170iK6cGvw|v.')
+  expect(stringify(Math.PI)).toEqual('mkEokiJF2|t.') // 3.141592653589793
+  expect(stringify(-Math.PI)).toEqual('mkEokiJF1|t.') // -3.141592653589793
+  expect(stringify(Math.E)).toEqual('jk8qtAsha|t.') // 2.718281828459045
+  expect(stringify(-Math.E)).toEqual('jk8qtAsh9|t.') // -2.718281828459045
+  expect(stringify(Math.SQRT2)).toEqual('1Av6kkrUUg|v.') // 1.4142135623730951
+  expect(stringify(-Math.SQRT2)).toEqual('1Av6kkrUUf|v.') // -1.4142135623730951
+  expect(stringify(-Number.MAX_VALUE)).toEqual('1_KZz-nRVD|98.')
+  expect(stringify(Number.MAX_VALUE)).toEqual('1_KZz-nRVE|98.')
+  expect(stringify(-Number.MIN_VALUE)).toEqual('9|a7.')
+  expect(stringify(Number.MIN_VALUE)).toEqual('a|a7.')
+})
 
 // test('encode primitives', () => {
 //   expect(stringify(true)).toEqual('!')
