@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "removeComments": false,
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "module": "ESNext",
+    "declaration": true,
+    "outDir": "dist"
+  },
+  "files": ["src/jsonito.ts"]
+}

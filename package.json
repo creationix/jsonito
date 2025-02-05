@@ -4,8 +4,12 @@
   "description": "El sobrinito de JSON",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prepublish": "tsc && biome format --fix && biome lint"
   },
   "author": "Tim Caswell <tim@creationix.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "typescript": "^5.7.3"
+  }
 }
