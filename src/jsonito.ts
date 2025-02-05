@@ -203,7 +203,9 @@ export function findDuplicates(rootVal: unknown) {
     if (!val || val === true || (typeof val === 'number' && Math.abs(val) < 64)) {
       return
     }
-    seen.set(val, (seen.get(val) || 0) + 1)
+    if (typeof val !== 'object') {
+      seen.set(val, (seen.get(val) || 0) + 1)
+    }
     if (typeof val === 'object') {
       if (Array.isArray(val)) {
         for (const v of val) {

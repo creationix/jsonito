@@ -237,22 +237,24 @@ test('encode objects and maps', () => {
   expect(stringify(complexMap)).toEqual('{!+~2+?4+[]6+{}8+a+five:}')
 })
 
-test('encode repeated values', () => {
-  const l = new Array(35).fill(-2048)
-  // This is big enough that __+ is duplicated once the pointer cost gets over 2 bytes
-  // We only want to use pointers if they are actually smaller.
-  expect(stringify(l)).toEqual('(__+[&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&])')
-})
-
 const fruit = [
   { color: 'red', fruits: ['apple', 'strawberry'] },
   { color: 'green', fruits: ['apple'] },
   { color: 'yellow', fruits: ['apple', 'banana'] },
+  { color: 'orange', fruits: ['orange'] },
 ]
 
 test('encode duplicate values', () => {
+  const l = new Array(35).fill(-2048)
+  // This is big enough that __+ is duplicated once the pointer cost gets over 2 bytes
+  // We only want to use pointers if they are actually smaller.
+  expect(stringify(l)).toEqual('(__+[&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&])')
+
   expect(stringify(fruit)).toEqual(
-    '(color:apple:fruits:[{&red:2&[1&a$strawberry]}{&green:2&[1&]}{&yellow:2&[1&banana:]}])',
+    '(color:fruits:apple:orange:[{&red:1&[2&a$strawberry]}{&green:1&[2&]}{&yellow:1&[2&banana:]}{&3&1&[3&]}])',
+  )
+  expect(stringify([fruit, fruit, fruit])).toEqual(
+    '(color:fruits:apple:orange:red:green:yellow:banana:a$strawberry[[{&4&1&[2&8&]}{&5&1&[2&]}{&6&1&[2&7&]}{&3&1&[3&]}][{&4&1&[2&8&]}{&5&1&[2&]}{&6&1&[2&7&]}{&3&1&[3&]}][{&4&1&[2&8&]}{&5&1&[2&]}{&6&1&[2&7&]}{&3&1&[3&]}]])',
   )
 })
 
