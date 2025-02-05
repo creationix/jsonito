@@ -200,6 +200,7 @@ test('encode strings', () => {
   expect(stringify('1 2 3')).toEqual('5$1 2 3')
   expect(stringify('𐐡𐐰𐑌𐐼o')).toEqual('h$𐐡𐐰𐑌𐐼o')
   expect(stringify('🚀🎲')).toEqual('8$🚀🎲')
+  expect(stringify('👶OM🍼')).toEqual('a$👶OM🍼')
   expect(stringify(' '.repeat(10))).toEqual(`a$${' '.repeat(10)}`)
   expect(stringify(' '.repeat(100))).toEqual(`1A$${' '.repeat(100)}`)
   expect(stringify(' '.repeat(1000))).toEqual(`fE$${' '.repeat(1000)}`)
