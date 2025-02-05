@@ -4,7 +4,10 @@
   "description": "El sobrinito de JSON",
   "main": "index.js",
   "scripts": {
-    "prepublish": "tsc && biome format --fix && biome lint"
+    "prepublish": "tsc && biome format --fix dist && biome lint --fix dist",
+    "format": "biome format --fix src && biome lint --fix src",
+    "lint": "biome lint src",
+    "test": "bun test"
   },
   "author": "Tim Caswell <tim@creationix.com>",
   "license": "MIT",

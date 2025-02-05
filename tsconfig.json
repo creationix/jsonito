@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
-    "removeComments": false,
-    "lib": ["ESNext"],
+    "lib": ["ESNext", "DOM"],
     "target": "ESNext",
     "module": "ESNext",
     "declaration": true,
