@@ -172,269 +172,88 @@ test('encode decimals', () => {
   expect(stringify(Number.MIN_VALUE)).toEqual('a|a7.')
 })
 
-// test('encode primitives', () => {
-//   expect(stringify(true)).toEqual('!')
-//   expect(stringify(false)).toEqual('~')
-//   expect(stringify(null)).toEqual('?')
-//   expect(() => stringify(undefined)).toThrow()
-// })
+test('encode primitives', () => {
+  expect(stringify(true)).toEqual('!')
+  expect(stringify(false)).toEqual('~')
+  expect(stringify(null)).toEqual('?')
+  expect(() => stringify(undefined)).toThrow()
+})
 
-// test('encode b64 strings', () => {
-//   expect(stringify('short')).toEqual('short@')
-//   expect(stringify('Dash-it')).toEqual('Dash-it@')
-//   expect(stringify('CAP_CASE')).toEqual('CAP_CASE@')
-//   expect(stringify('1234')).toEqual('1234@')
-//   // Leading zeros aren't supported
-//   expect(stringify('01234')).toEqual('5$01234')
-//   // strings longer than 8 chars aren't encoded in this version
-//   expect(stringify('12345678')).toEqual('12345678@')
-//   expect(stringify('123456789')).toEqual('9$123456789')
-//   expect(stringify('ThisIsLong')).toEqual('a$ThisIsLong')
-// })
+test('encode b64 strings', () => {
+  expect(stringify('short')).toEqual('short:')
+  expect(stringify('Dash-it')).toEqual('Dash-it:')
+  expect(stringify('CAP_CASE')).toEqual('CAP_CASE:')
+  expect(stringify('1234')).toEqual('1234:')
+  // Leading zeros aren't supported
+  expect(stringify('01234')).toEqual('5$01234')
+  // strings longer than 8 chars aren't encoded in this version
+  expect(stringify('12345678')).toEqual('12345678:')
+  expect(stringify('123456789')).toEqual('9$123456789')
+  expect(stringify('ThisIsLong')).toEqual('a$ThisIsLong')
+})
 
-// test('encode strings', () => {
-//   expect(stringify('')).toEqual('$')
-//   expect(stringify(' ')).toEqual('1$ ')
-//   expect(stringify('Hi!')).toEqual('3$Hi!')
-//   expect(stringify('Goodbye.')).toEqual('8$Goodbye.')
-//   expect(stringify('1 2 3')).toEqual('5$1 2 3')
-//   expect(stringify('𐐡𐐰𐑌𐐼o')).toEqual('h$𐐡𐐰𐑌𐐼o')
-//   expect(stringify('🚀🎲')).toEqual('8$🚀🎲')
-//   expect(stringify(' '.repeat(10))).toEqual(`a$${' '.repeat(10)}`)
-//   expect(stringify(' '.repeat(100))).toEqual(`1A$${' '.repeat(100)}`)
-//   expect(stringify(' '.repeat(1000))).toEqual(`fE$${' '.repeat(1000)}`)
-// })
-// test('encode bytes', () => {
-//   expect(stringify(new Uint8Array([]))).toEqual('=')
-//   expect(stringify(new Uint8Array([0]))).toEqual('2=AA')
-//   expect(stringify(new Uint8Array([0, 0]))).toEqual('3=AAA')
-//   expect(stringify(new Uint8Array([0, 0, 0]))).toEqual('4=AAAA')
-//   expect(stringify(new Uint8Array([0b00000100, 0b00100000, 0b11000100]))).toEqual('4=BCDE')
-//   expect(stringify(new Uint8Array([0b00010000, 0b00110000, 0b10000001]))).toEqual('4=EDCB')
-//   expect(stringify(new Uint8Array([1, 2, 3, 4]))).toEqual('6=AQIDBA')
-//   expect(stringify(new Uint8Array(10).fill(32))).toEqual('e=ICAgICAgICAgIA')
-//   expect(stringify(new Uint8Array(10).fill(127))).toEqual('e=f39_f39_f39_fw')
-//   expect(stringify(new Uint8Array(1).fill(255))).toEqual('2=_w')
-//   expect(stringify(new Uint8Array(2).fill(255))).toEqual('3=__8')
-//   expect(stringify(new Uint8Array(3).fill(255))).toEqual('4=____')
-//   expect(stringify(new Uint8Array(10).fill(255))).toEqual('e=_____________w')
-//   expect(stringify(new Uint8Array(11).fill(255))).toEqual('f=______________8')
-//   expect(stringify(new Uint8Array(12).fill(255))).toEqual('g=________________')
-//   expect(stringify(new Uint8Array([0xde, 0xad, 0xbe, 0xef]).fill(32))).toEqual('6=ICAgIA')
-//   expect(
-//     stringify(
-//       new Uint8Array([
-//         104, 150, 20, 118, 229, 193, 27, 106, 101, 107, 122, 106, 221, 206, 20, 235, 28, 61, 49, 193, 234, 46, 2, 132,
-//         197, 10, 144, 173, 173, 57, 118, 240, 212, 161, 41, 122, 139, 95, 121, 181, 175, 184, 89, 128, 29, 67, 179, 185,
-//         183, 101, 162, 178, 149, 24, 37, 145, 110, 217, 231, 226, 192, 144, 240, 238, 68, 195, 180, 161, 60, 186, 45,
-//         87, 48, 149, 213, 204, 145, 171, 130, 92, 191, 67, 28, 250, 12, 151, 167, 82, 30, 199, 213, 235, 12, 231, 90,
-//         166, 242, 157, 87, 37,
-//       ]),
-//     ),
-//   ).toEqual(
-//     '26=aJYUduXBG2pla3pq3c4U6xw9McHqLgKExQqQra05dvDUoSl6i195ta-4WYAdQ7O5t2WispUYJZFu2efiwJDw7kTDtKE8ui1XMJXVzJGrgly_Qxz6DJenUh7H1esM51qm8p1XJQ',
-//   )
-// })
+test('encode strings', () => {
+  expect(stringify('')).toEqual('$')
+  expect(stringify(' ')).toEqual('1$ ')
+  expect(stringify('Hi!')).toEqual('3$Hi!')
+  expect(stringify('Goodbye.')).toEqual('8$Goodbye.')
+  expect(stringify('1 2 3')).toEqual('5$1 2 3')
+  expect(stringify('𐐡𐐰𐑌𐐼o')).toEqual('h$𐐡𐐰𐑌𐐼o')
+  expect(stringify('🚀🎲')).toEqual('8$🚀🎲')
+  expect(stringify(' '.repeat(10))).toEqual(`a$${' '.repeat(10)}`)
+  expect(stringify(' '.repeat(100))).toEqual(`1A$${' '.repeat(100)}`)
+  expect(stringify(' '.repeat(1000))).toEqual(`fE$${' '.repeat(1000)}`)
+})
 
-// test('encode lists', () => {
-//   // First encode non-counted lists
-//   const opts: EncodeOptions = { listCountedLimit: Infinity }
-//   expect(stringify([], opts)).toEqual(';')
-//   expect(stringify([0], opts)).toEqual('1;+')
-//   expect(stringify([0, true], opts)).toEqual('2;+!')
-//   expect(stringify([0, true, false], opts)).toEqual('3;+!~')
-//   expect(stringify([1, 2, 3], opts)).toEqual('6;2+4+6+')
-//   expect(stringify([[]], opts)).toEqual('1;;')
-//   expect(stringify([[[]]], opts)).toEqual('3;1;;')
-//   expect(stringify([[[]], [[], []], [[], [], []]], opts)).toEqual('c;1;;2;;;3;;;;')
-//   // Then encode as counted lists
-//   opts.listCountedLimit = -1
-//   expect(stringify([], opts)).toEqual('|;')
-//   expect(stringify([0], opts)).toEqual('1|1;+')
-//   expect(stringify([0, true], opts)).toEqual('2|2;+!')
-//   expect(stringify([0, true, false], opts)).toEqual('3|3;+!~')
-//   expect(stringify([1, 2, 3], opts)).toEqual('6|3;2+4+6+')
-//   expect(stringify([[]], opts)).toEqual('2|1;|;')
-//   expect(stringify([[[]]], opts)).toEqual('6|1;2|1;|;')
-//   expect(stringify([[[]], [[], []], [[], [], []]], opts)).toEqual('o|3;2|1;|;4|2;|;|;6|3;|;|;|;')
-//   // Then encode with a partial limit
-//   opts.listCountedLimit = 2
-//   expect(stringify([], opts)).toEqual(';')
-//   expect(stringify([0], opts)).toEqual('1;+')
-//   expect(stringify([0, true], opts)).toEqual('2;+!')
-//   expect(stringify([0, true, false], opts)).toEqual('3|3;+!~')
-//   expect(stringify([1, 2, 3], opts)).toEqual('6|3;2+4+6+')
-//   expect(stringify([[]], opts)).toEqual('1;;')
-//   expect(stringify([[[]]], opts)).toEqual('3;1;;')
-//   expect(stringify([[[]], [[], []], [[], [], []]], opts)).toEqual('e|3;1;;2;;;3|3;;;;')
-//   // Encode pretty-printed
-//   opts.prettyPrint = true
-//   expect(stringify([], opts)).toEqual(';')
-//   expect(stringify([0], opts)).toEqual('3;\n +')
-//   expect(stringify([0, true], opts)).toEqual('6;\n +\n !')
-//   expect(stringify([0, true, false], opts)).toEqual('9|3;\n +\n !\n ~')
-//   expect(stringify([1, 2, 3], opts)).toEqual('c|3;\n 2+\n 4+\n 6+')
-//   expect(stringify([[]], opts)).toEqual('3;\n ;')
-//   expect(stringify([[[]]], opts)).toEqual('8;\n 4;\n  ;')
-//   expect(stringify([[[]], [[], []], [[], [], []]], opts)).toEqual('C|3;\n 4;\n  ;\n 8;\n  ;\n  ;\n c|3;\n  ;\n  ;\n  ;')
-// })
+test('encode lists', () => {
+  // First encode non-counted lists
+  expect(stringify([])).toEqual('[]')
+  expect(stringify([0])).toEqual('[+]')
+  expect(stringify([0, true])).toEqual('[+!]')
+  expect(stringify([0, true, false])).toEqual('[+!~]')
+  expect(stringify([1, 2, 3])).toEqual('[2+4+6+]')
+  expect(stringify([[]])).toEqual('[[]]')
+  expect(stringify([[[]]])).toEqual('[[[]]]')
+  expect(stringify([[[]], [[], []], [[], [], []]])).toEqual('[[[]][[][]][[][][]]]')
+})
 
-// test('encode objects and maps', () => {
-//   const complexMap = new Map<unknown, unknown>([
-//     [true, 0],
-//     [false, 1],
-//     [null, 2],
-//     [[], 3],
-//     [{}, 4],
-//     [5, 'five'],
-//   ])
-//   // First encode non-counted objects
-//   const opts: EncodeOptions = { mapCountedLimit: Infinity }
-//   expect(stringify({}, opts)).toEqual(':')
-//   expect(stringify({ a: 0 }, opts)).toEqual('3:a@+')
-//   expect(stringify({ a: 0, b: true }, opts)).toEqual('6:a@+b@!')
-//   expect(stringify({ a: 0, b: true, c: {} }, opts)).toEqual('9:a@+b@!c@:')
-//   expect(stringify(new Map(), opts)).toEqual(':')
-//   expect(stringify(new Map([[1, 2]]), opts)).toEqual('4:2+4+')
-//   expect(stringify(complexMap, opts)).toEqual('l:!+~2+?4+;6+:8+a+five@')
-//   // Then encode as counted (keys should come grouped together first)
-//   opts.mapCountedLimit = -1
-//   expect(stringify({}, opts)).toEqual('|:')
-//   expect(stringify({ a: 0 }, opts)).toEqual('3|1:a@+')
-//   expect(stringify({ a: 0, b: true }, opts)).toEqual('6|2:a@b@+!')
-//   expect(stringify({ a: 0, b: true, c: {} }, opts)).toEqual('a|3:a@b@c@+!|:')
-//   expect(stringify(new Map(), opts)).toEqual('|:')
-//   expect(stringify(new Map([[1, 2]]), opts)).toEqual('4|1:2+4+')
-//   expect(stringify(complexMap, opts)).toEqual('m|6:!~?;|:a++2+4+6+8+five@')
-//   // Then encode with a sane limit
-//   opts.mapCountedLimit = 1
-//   expect(stringify({}, opts)).toEqual(':')
-//   expect(stringify({ a: 0 }, opts)).toEqual('3:a@+')
-//   expect(stringify({ a: 0, b: true }, opts)).toEqual('6|2:a@b@+!')
-//   expect(stringify({ a: 0, b: true, c: {} }, opts)).toEqual('9|3:a@b@c@+!:')
-//   expect(stringify(new Map(), opts)).toEqual(':')
-//   expect(stringify(new Map([[1, 2]]), opts)).toEqual('4:2+4+')
-//   expect(stringify(complexMap, opts)).toEqual('l|6:!~?;:a++2+4+6+8+five@')
-//   // Encode pretty-printed
-//   opts.prettyPrint = true
-//   expect(stringify({}, opts)).toEqual(':')
-//   expect(stringify({ a: 0 }, opts)).toEqual('6:\n a@ +')
-//   expect(stringify({ a: 0, b: true }, opts)).toEqual('f|2:\n a@\n b@\n\n +\n !')
-//   expect(stringify({ a: 0, b: true }, { ...opts, mapCountedLimit: Infinity })).toEqual('c:\n a@ +\n b@ !')
-//   expect(stringify({ a: 0, b: true, c: {} }, opts)).toEqual('m|3:\n a@\n b@\n c@\n\n +\n !\n :')
-//   expect(stringify(new Map(), opts)).toEqual(':')
-//   expect(stringify(new Map([[1, 2]]), opts)).toEqual('7:\n 2+ 4+')
-//   expect(stringify(complexMap, opts)).toEqual('K|6:\n !\n ~\n ?\n ;\n :\n a+\n\n +\n 2+\n 4+\n 6+\n 8+\n five@')
-// })
+test('encode objects and maps', () => {
+  const complexMap = new Map<unknown, unknown>([
+    [true, 0],
+    [false, 1],
+    [null, 2],
+    [[], 3],
+    [{}, 4],
+    [5, 'five'],
+  ])
+  // First encode non-counted objects
+  expect(stringify({})).toEqual('{}')
+  expect(stringify({ a: 0 })).toEqual('{a:+}')
+  expect(stringify({ a: 0, b: true })).toEqual('{a:+b:!}')
+  expect(stringify({ a: 0, b: true, c: {} })).toEqual('{a:+b:!c:{}}')
+  expect(stringify(new Map())).toEqual('{}')
+  expect(stringify(new Map([[1, 2]]))).toEqual('{2+4+}')
+  expect(stringify(complexMap)).toEqual('{!+~2+?4+[]6+{}8+a+five:}')
+})
 
-// test('encode string chains', () => {
-//   const opts: EncodeOptions = {
-//     chainMinChars: 7,
-//     // biome-ignore lint/performance/useTopLevelRegex: <explanation>
-//     chainSplitter: /([^a-zA-Z0-9-_]*[a-zA-Z0-9-_]+)/,
-//   }
-//   expect(stringify('/segment/segment/segment', opts)).toEqual('d,1**8$/segment')
-//   expect(stringify('/segment/o/n/e/segment', opts)).toEqual('k,8*6$/o/n/e8$/segment')
-// })
+test('encode repeated values', () => {
+  const l = new Array(35).fill(-2048)
+  // This is big enough that __+ is duplicated once the pointer cost gets over 2 bytes
+  // We only want to use pointers if they are actually smaller.
+  expect(stringify(l)).toEqual('(__+[&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&])')
+})
 
-// test('encode repeated values', () => {
-//   const l = new Array(35).fill(-2048)
-//   // This is big enough that __+ is duplicated once the pointer cost gets over 2 bytes
-//   // We only want to use pointers if they are actually smaller.
-//   expect(stringify(l)).toEqual('17|z;__+_*Z*X*V*T*R*P*N*L*J*H*F*D*B*z*x*v*t*r*p*n*l*j*h*f*d*b*9*7*5*3*1**__+')
-// })
+const fruit = [
+  { color: 'red', fruits: ['apple', 'strawberry'] },
+  { color: 'green', fruits: ['apple'] },
+  { color: 'yellow', fruits: ['apple', 'banana'] },
+]
 
-// const fruit = [
-//   { color: 'red', fruits: ['apple', 'strawberry'] },
-//   { color: 'green', fruits: ['apple'] },
-//   { color: 'yellow', fruits: ['apple', 'banana'] },
-// ]
-
-// test('encode known values', () => {
-//   expect(stringify(fruit)).toEqual(
-//     '1l;o|2:I*M*red@e;U*a$strawberrye|2:g*k*green@2;q*z|2:color@fruits@yellow@d;apple@banana@',
-//   )
-//   const options: EncodeOptions = {
-//     knownValues: [
-//       'color',
-//       'red',
-//       'orange',
-//       'yellow',
-//       'green',
-//       'blue',
-//       'violet',
-//       'fruits',
-//       'apple',
-//       'banana',
-//       'strawberry',
-//     ],
-//   }
-//   expect(stringify(fruit, options)).toEqual('H;b|2:&7&1&4;8&a&9|2:&7&4&2;8&b|2:&7&3&4;8&9&')
-// })
-
-// test('encode pretty-print', () => {
-//   const options: EncodeOptions = {
-//     prettyPrint: true,
-//   }
-//   expect(stringify({ int: 123, rational: 1 / 3, decimal: 1.23 }, options)).toEqual(
-//     'K|3:\n int@\n rational@\n decimal@\n\n 3S+\n 2|3/\n 3S|3.',
-//   )
-//   expect(stringify({ bool: true, bool2: false, nil: null }, options)).toEqual(
-//     'v|3:\n bool@\n bool2@\n nil@\n\n !\n ~\n ?',
-//   )
-//   expect(stringify({ obj: {}, arr: [], chain: 'repeat/repeat/repeat' }, options)).toEqual(
-//     'M|3:\n obj@\n arr@\n chain@\n\n :\n ;\n h,repeat@*7$/repeat',
-//   )
-//   expect(stringify({ string: 'Hello', bytes: new Uint8Array([1, 2, 3]) }, options)).toEqual(
-//     'y|2:\n string@\n bytes@\n\n Hello@\n 4=AQID',
-//   )
-//   expect(stringify(fruit, options)).toEqual(
-//     '2p;\n M|2:\n  1l*\n  1o*\n\n  red@\n  n;\n   1u*\n   a$strawberry\n v|2:\n  w*\n  A*\n\n  green@\n  6;\n   F*\n U|2:\n  color@\n  fruits@\n\n  yellow@\n  l;\n   apple@\n   banana@',
-//   )
-// })
-
-// test('encode binary', () => {
-//   expect(encodeBinary(null)).toEqual(new Uint8Array([0]))
-//   expect(encodeBinary(false)).toEqual(new Uint8Array([1]))
-//   expect(encodeBinary(true)).toEqual(new Uint8Array([2]))
-//   expect(encodeBinary(0)).toEqual(new Uint8Array([5]))
-//   expect(encodeBinary(-1)).toEqual(new Uint8Array([21]))
-//   expect(encodeBinary(1)).toEqual(new Uint8Array([37]))
-//   expect(encodeBinary(-2)).toEqual(new Uint8Array([53]))
-//   expect(encodeBinary(2)).toEqual(new Uint8Array([69]))
-//   expect(encodeBinary(-3)).toEqual(new Uint8Array([85]))
-//   expect(encodeBinary(3)).toEqual(new Uint8Array([101]))
-//   expect(encodeBinary(-4)).toEqual(new Uint8Array([117]))
-//   expect(encodeBinary(4)).toEqual(new Uint8Array([133, 1]))
-//   expect(encodeBinary(5)).toEqual(new Uint8Array([165, 1]))
-//   expect(encodeBinary(12)).toEqual(new Uint8Array([133, 3]))
-//   expect(encodeBinary(123)).toEqual(new Uint8Array([229, 30]))
-//   expect(encodeBinary(1234)).toEqual(new Uint8Array([197, 180, 2]))
-//   expect(encodeBinary('')).toEqual(new Uint8Array([9]))
-//   expect(encodeBinary('H')).toEqual(new Uint8Array([25, 72]))
-//   expect(encodeBinary('Hi')).toEqual(new Uint8Array([41, 72, 105]))
-//   expect(encodeBinary('Hello')).toEqual(new Uint8Array([89, 72, 101, 108, 108, 111]))
-//   expect(encodeBinary('Greetings')).toEqual(new Uint8Array([153, 1, 71, 114, 101, 101, 116, 105, 110, 103, 115]))
-//   expect(encodeBinary([], { listCountedLimit: Infinity })).toEqual(new Uint8Array([12]))
-//   expect(encodeBinary([], { listCountedLimit: -Infinity })).toEqual(new Uint8Array([15, 12]))
-//   expect(encodeBinary([1, 2, 3], { listCountedLimit: Infinity })).toEqual(new Uint8Array([60, 37, 69, 101]))
-//   expect(encodeBinary([1, 2, 3], { listCountedLimit: -Infinity })).toEqual(new Uint8Array([63, 60, 37, 69, 101]))
-//   expect(encodeBinary({ a: 1, b: 2, c: 3 }, { mapCountedLimit: Infinity })).toEqual(
-//     new Uint8Array([157, 1, 25, 97, 37, 25, 98, 69, 25, 99, 101]),
-//   )
-//   expect(encodeBinary({ a: 1, b: 2, c: 3 }, { mapCountedLimit: -Infinity })).toEqual(
-//     new Uint8Array([159, 1, 61, 25, 97, 25, 98, 25, 99, 37, 69, 101]),
-//   )
-//   expect(encodeBinary(fruit)).toEqual(
-//     new Uint8Array([
-//       156, 10, 143, 3, 45, 148, 5, 212, 5, 57, 114, 101, 100, 236, 1, 212, 6, 169, 1, 115, 116, 114, 97, 119, 98, 101,
-//       114, 114, 121, 223, 1, 45, 228, 1, 164, 2, 89, 103, 114, 101, 101, 110, 44, 148, 3, 191, 4, 45, 89, 99, 111, 108,
-//       111, 114, 105, 102, 114, 117, 105, 116, 115, 105, 121, 101, 108, 108, 111, 119, 220, 1, 89, 97, 112, 112, 108,
-//       101, 105, 98, 97, 110, 97, 110, 97,
-//     ]),
-//   )
-//   expect(encodeBinary(new Uint8Array([1, 2, 3, 4]))).toEqual(new Uint8Array([74, 1, 2, 3, 4]))
-// })
+test('encode duplicate values', () => {
+  expect(stringify(fruit)).toEqual(
+    '(color:apple:fruits:[{&red:2&[1&a$strawberry]}{&green:2&[1&]}{&yellow:2&[1&banana:]}])',
+  )
+})
 
 // test('decode B64', () => {
 //   const input = new TextEncoder().encode('+1+9+a+z+A+Z+-+_+10+11')

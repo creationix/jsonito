@@ -112,7 +112,7 @@ export function splitDecimal(num: number) {
   return { base, exp }
 }
 
-const B64_STR = /^([a-zA-Z0-9_-]+)$/
+const B64_STR = /^([1-9a-zA-Z_-][0-9a-zA-Z_-]{0,7})$/
 
 function writeString(str: string, parts: string[]) {
   if (B64_STR.test(str)) {
