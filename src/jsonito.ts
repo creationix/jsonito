@@ -29,7 +29,7 @@ function stringifyWithDuplicates(rootValue: unknown, known: Map<unknown, number>
 function writeKey(key: string, parts: string[], known: Map<unknown, number>) {
   if (known.has(key)) {
     const index = known.get(key)
-    return parts.push(encodeVarint(index), '&')
+    return parts.push(encodeVarint(BigInt(index)), '&')
   }
   return writeString(key, parts)
 }
@@ -37,7 +37,7 @@ function writeKey(key: string, parts: string[], known: Map<unknown, number>) {
 function writeAny(val: unknown, parts: string[], known: Map<unknown, number>) {
   if (known.has(val)) {
     const index = known.get(val)
-    return parts.push(encodeVarint(index), '&')
+    return parts.push(encodeVarint(BigInt(index)), '&')
   }
   if (val === null) {
     return parts.push('?')
@@ -47,6 +47,9 @@ function writeAny(val: unknown, parts: string[], known: Map<unknown, number>) {
   }
   if (typeof val === 'number') {
     return writeNumber(val, parts)
+  }
+  if (typeof val === 'bigint') {
+    return writeInteger(val, parts)
   }
   if (typeof val === 'string') {
     return writeString(val, parts)
@@ -65,27 +68,35 @@ function writeAny(val: unknown, parts: string[], known: Map<unknown, number>) {
 
 const BASE64 = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_'
 
-export function encodeVarint(num: number) {
+export function encodeVarint(num: bigint) {
   const digits: string[] = []
   let n = num
-  while (n > 0) {
-    const digit = n % 64
-    n = Math.floor(n / 64)
+  while (n > 0n) {
+    const digit = Number(n % 64n)
+    n /= 64n
     digits.push(BASE64[digit])
   }
   return digits.reverse().join('')
 }
 
-export function encodeSignedVarint(num: number) {
-  return encodeVarint(num < 0 ? -num * 2 - 1 : num * 2)
+export function encodeSignedVarint(num: bigint) {
+  return encodeVarint(num < 0n ? -num * 2n - 1n : num * 2n)
 }
 
 function writeNumber(num: number, parts: string[]) {
   if (Number.isSafeInteger(num)) {
-    return parts.push(encodeSignedVarint(num), '+')
+    return writeInteger(BigInt(num), parts)
   }
+  return writeDecimal(num, parts)
+}
+
+function writeInteger(num: bigint, parts: string[]) {
+  return parts.push(encodeSignedVarint(num), '+')
+}
+
+function writeDecimal(num: number, parts: string[]) {
   const { base, exp } = splitDecimal(num)
-  return parts.push(encodeSignedVarint(base), '|', encodeSignedVarint(exp), '.')
+  return parts.push(encodeSignedVarint(BigInt(base)), '|', encodeSignedVarint(BigInt(exp)), '.')
 }
 
 const DEC_PARTS = /^(-?\d+)(?:\.(\d+))?e[+]?([-]?\d+)$/
@@ -108,7 +119,7 @@ function writeString(str: string, parts: string[]) {
     return parts.push(str, ':')
   }
   const len = new TextEncoder().encode(str).length
-  return parts.push(encodeVarint(len), '$', str)
+  return parts.push(encodeVarint(BigInt(len)), '$', str)
 }
 
 function writeArray(arr: unknown[], parts: string[], known: Map<unknown, number>) {
@@ -175,7 +186,7 @@ export function findDuplicates(rootVal: unknown) {
   let index = 0
   for (const [val, _count, enc] of sorted) {
     // Filter out any values that are cheaper to encode directly
-    const refCost = encodeVarint(index).length + 1
+    const refCost = encodeVarint(BigInt(index)).length + 1
     const encodedCost = enc.length
     if (encodedCost <= refCost) {
       continue
