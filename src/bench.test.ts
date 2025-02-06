@@ -57,6 +57,11 @@ test("benchmark pokemon", async () => {
   console.log("JSONito.parse", totals.jito.parse)
   console.log("JSON.stringify", totals.json.stringify)
   console.log("JSONito.stringify", totals.jito.stringify)
+
+  const jsonSize = new TextEncoder().encode(json).length
+  const jitoSize = new TextEncoder().encode(jito).length
+  console.log("JSON size", jsonSize)
+  console.log("JSONito size", jitoSize)
   if (totals.jito.parse > totals.json.parse) {
     console.log(`JSONito.parse is slower by a multiple of ${totals.jito.parse / totals.json.parse}`)
   } else {
@@ -66,5 +71,10 @@ test("benchmark pokemon", async () => {
     console.log(`JSONito.stringify is slower by a multiple of ${totals.jito.stringify / totals.json.stringify}`)
   } else {
     console.log(`JSONito.stringify is faster by a multiple of ${totals.json.stringify / totals.jito.stringify}`)
+  }
+  if (jitoSize > jsonSize) {
+    console.log(`JSONito is larger by a multiple of ${jitoSize / jsonSize}`)
+  } else {
+    console.log(`JSONito is smaller by a multiple of ${jsonSize / jitoSize}`)
   }
 })
