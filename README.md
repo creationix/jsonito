@@ -89,6 +89,20 @@ But coming soon is an option to pretty-print as well
 }
 ```
 
+## Performance
+
+So it's smaller, but by how much you ask?  And does it make parsing slower?
+
+This [benchmark](src/bench.test.ts) measures encoding and decoding a large collection of [public pokemon information](https://pokeapi.co/api/v2/pokemon/) which ends up being around 1 MiB of typical JSON content.
+
+You can see the latest results in every [CI commit](https://github.com/creationix/jsonito/actions/runs/13188729510/job/36817001648#step:4:79) to guage performance over time as we optimize this implementation.
+
+| Metric | JSON | JSONito | Relative Comparison |
+| :----- | :--- | :------ | :------------------ |
+| **Parse Time** | 2.61 ms | 8.45 ms | JSONito parse is 3.23x slower |
+| **Stringify Time** | 1.22 ms | 30.83 ms | JSONito stringify is 25.22x slower |
+| **Encoded Size** | 1.10 MiB | 206.89 KiB | JSONito encoded is 5.46x **smaller** |
+
 ## Gallery of Samples
 
 |                                       JS |                                JSON | JSONito                   | Comment             |
