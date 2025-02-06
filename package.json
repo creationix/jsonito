@@ -6,15 +6,22 @@
   },
   "version": "0.1.3",
   "description": "El sobrinito de JSON",
-  "main": "dist/jsonito.js",
-  "types": "dist/jsonito.d.ts",
-  "type": "module",
+  "main": "./dist/cjs/jsonito.js",
+  "module": "./dist/esm/jsonito.js",
+  "types": "./dist/types/jsonito.d.ts",
+  "exports": {
+    "import": "./dist/esm/jsonito.js",
+    "require": "./dist/cjs/jsonito.js"
+  },
   "files": [
     "dist/*",
     "README.md"
   ],
   "scripts": {
-    "prepublish": "tsc && biome format --fix dist && biome lint --fix dist",
+    "build:cjs": "tsc --project tsconfig.cjs.json",
+    "build:esm": "tsc --project tsconfig.esm.json",
+    "build:types": "tsc --project tsconfig.types.json",
+    "build": "npm run build:cjs && npm run build:esm && npm run build:types && biome format --fix dist && biome lint --fix dist",
     "format": "biome format --fix src && biome lint --fix src",
     "lint": "biome lint src",
     "test": "bun test"

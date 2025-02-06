@@ -1,27 +1,23 @@
+
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Tim Caswell
-
-export interface EncodeOptions {
-  // Do a scan on the value and inject an outer scope to factor our common values.
-  findDuplicates?: boolean
-  // Optional dictionaries to use for encoding
-  dictionaries?: Record<string, unknown[]>
-}
-
-export interface DecodeOptions {
-  // Optional dictionaries to use for decoding
-  dictionaries?: Record<string, unknown[]>
-}
-
+Object.defineProperty(exports, "__esModule", { value: true })
+exports.stringify = stringify
+exports.encodeB64 = encodeB64
+exports.encodeSignedB64 = encodeSignedB64
+exports.splitDecimal = splitDecimal
+exports.writeDuplicates = writeDuplicates
+exports.parse = parse
+exports.parseAny = parseAny
+exports.skipWhitespace = skipWhitespace
+exports.skipB64 = skipB64
+exports.parseB64 = parseB64
 const B64_STR = /^([1-9a-zA-Z_-][0-9a-zA-Z_-]{0,7})$/
-
-type Known = Map<unknown, number>
-
 // Encode any arbitrary value as JSONito
-export function stringify(rootValue: unknown, options: EncodeOptions = {}): string {
-  const parts: string[] = []
-  const known: Known = new Map()
-  const willKnow = new Set<unknown>()
+function stringify(rootValue, options = {}) {
+  const parts = []
+  const known = new Map()
+  const willKnow = new Set()
   if (options.findDuplicates ?? true) {
     if (options.dictionaries) {
       for (const [_, values] of Object.entries(options.dictionaries)) {
@@ -44,21 +40,18 @@ export function stringify(rootValue: unknown, options: EncodeOptions = {}): stri
     }
   }
   writeAny(rootValue, parts, known)
-
   return parts.join("")
 }
-
-function writeKey(key: string, parts: string[], known: Known) {
+function writeKey(key, parts, known) {
   if (known.has(key)) {
-    const index = known.get(key)!
+    const index = known.get(key)
     return parts.push(encodeB64(BigInt(index)), "*")
   }
   return writeString(key, parts)
 }
-
-function writeAny(val: unknown, parts: string[], known: Known) {
+function writeAny(val, parts, known) {
   if (known.has(val)) {
-    const index = known.get(val)!
+    const index = known.get(val)
     return parts.push(encodeB64(BigInt(index)), "*")
   }
   if (val === null) {
@@ -87,11 +80,9 @@ function writeAny(val: unknown, parts: string[], known: Known) {
   }
   throw new Error(`TODO: implement writeAny for ${typeof val}`)
 }
-
 const BASE64 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_"
-
-export function encodeB64(num: bigint) {
-  const digits: string[] = []
+function encodeB64(num) {
+  const digits = []
   let n = num
   while (n > 0n) {
     const digit = Number(n % 64n)
@@ -100,26 +91,21 @@ export function encodeB64(num: bigint) {
   }
   return digits.reverse().join("")
 }
-
-export function encodeSignedB64(num: bigint) {
+function encodeSignedB64(num) {
   return encodeB64(num < 0n ? -num * 2n - 1n : num * 2n)
 }
-
-function writeNumber(num: number, parts: string[]) {
+function writeNumber(num, parts) {
   const { base, exp } = splitDecimal(num)
   if (exp >= 0 && exp <= 4) {
     return writeInteger(BigInt(num), parts)
   }
   return parts.push(encodeSignedB64(BigInt(exp)), ":", encodeSignedB64(BigInt(base)), ".")
 }
-
-function writeInteger(num: bigint, parts: string[]) {
+function writeInteger(num, parts) {
   return parts.push(encodeSignedB64(num), ".")
 }
-
 const DEC_PARTS = /^(-?\d+)(?:\.(\d+))?e[+]?([-]?\d+)$/
-
-export function splitDecimal(num: number) {
+function splitDecimal(num) {
   const match = num.toExponential().match(DEC_PARTS)
   if (!match) {
     throw new Error(`Failed to split decimal for ${num}`)
@@ -129,24 +115,21 @@ export function splitDecimal(num: number) {
   const exp = Number.parseInt(e1, 10) - b2.length
   return { base, exp }
 }
-
-function writeString(str: string, parts: string[]) {
+function writeString(str, parts) {
   if (B64_STR.test(str)) {
     return parts.push(str, "'")
   }
   const len = new TextEncoder().encode(str).length
   return parts.push(encodeB64(BigInt(len)), "~", str)
 }
-
-function writeArray(arr: unknown[], parts: string[], known: Known) {
+function writeArray(arr, parts, known) {
   parts.push("[")
   for (const v of arr) {
     writeAny(v, parts, known)
   }
   parts.push("]")
 }
-
-function writeMap(map: Map<unknown, unknown>, parts: string[], known: Known) {
+function writeMap(map, parts, known) {
   parts.push("{")
   for (const [k, v] of map) {
     writeAny(k, parts, known)
@@ -154,8 +137,7 @@ function writeMap(map: Map<unknown, unknown>, parts: string[], known: Known) {
   }
   parts.push("}")
 }
-
-function writeObject(obj: object, parts: string[], known: Known) {
+function writeObject(obj, parts, known) {
   parts.push("{")
   for (const [k, v] of Object.entries(obj)) {
     writeKey(k, parts, known)
@@ -163,27 +145,21 @@ function writeObject(obj: object, parts: string[], known: Known) {
   }
   parts.push("}")
 }
-
-function removeSingletons([_, count]: [unknown, number]) {
+function removeSingletons([_, count]) {
   return count > 1
 }
-
-function repeatOrder([_val1, count1]: [unknown, number], [_val2, count2]: [unknown, number]) {
+function repeatOrder([_val1, count1], [_val2, count2]) {
   return count2 - count1
 }
-
-export function writeDuplicates(rootVal: unknown, parts: string[], known: Known, willKnow: Set<unknown>) {
+function writeDuplicates(rootVal, parts, known, willKnow) {
   // Record a count of seen values
-  const seen = new Map<unknown, number>()
+  const seen = new Map()
   walk(rootVal, seen)
-
   // Filter to only repeated values
   const repeats = [...seen.entries()].filter(removeSingletons)
-
   // Sort by frequency descending and then by JSONito length ascending
   const sorted = [...repeats].sort(repeatOrder)
-
-  const subParts: string[] = []
+  const subParts = []
   for (const [val, _count] of sorted) {
     // Skip values we have already
     if (known.has(val) || willKnow.has(val)) {
@@ -203,8 +179,7 @@ export function writeDuplicates(rootVal: unknown, parts: string[], known: Known,
     parts.push(enc)
   }
 }
-
-function walk(val: unknown, seen: Map<unknown, number>) {
+function walk(val, seen) {
   if (!val) {
     return
   }
@@ -226,11 +201,8 @@ function walk(val: unknown, seen: Map<unknown, number>) {
     }
   }
 }
-
-type Seen = unknown[] & { dictionaries: Record<string, unknown[]> }
-
-export function parse(jito: string, opts: DecodeOptions = {}): unknown {
-  const seen: Seen = [] as unknown as Seen
+function parse(jito, opts = {}) {
+  const seen = []
   seen.dictionaries = opts.dictionaries || {}
   const len = jito.length
   let offset = skipWhitespace(jito, 0)
@@ -241,9 +213,8 @@ export function parse(jito: string, opts: DecodeOptions = {}): unknown {
   }
   return seen.pop()
 }
-
-function parseList(jito: string, offset: number, seen: Seen): { value: unknown[]; offset: number } {
-  const list: unknown[] = []
+function parseList(jito, offset, seen) {
+  const list = []
   const len = jito.length
   let o = skipWhitespace(jito, offset)
   while (o < len) {
@@ -256,9 +227,8 @@ function parseList(jito: string, offset: number, seen: Seen): { value: unknown[]
   }
   throw jitoSyntaxError(jito, o)
 }
-
-function parseObject(jito: string, offset: number, seen: Seen): { value: Record<string, unknown>; offset: number } {
-  const entries: [unknown, unknown][] = []
+function parseObject(jito, offset, seen) {
+  const entries = []
   let allStringKeys = true
   const len = jito.length
   let o = skipWhitespace(jito, offset)
@@ -276,8 +246,7 @@ function parseObject(jito: string, offset: number, seen: Seen): { value: Record<
   }
   throw jitoSyntaxError(jito, o)
 }
-
-export function parseAny(jito: string, offset: number, seen: Seen): { value: unknown; offset: number } {
+function parseAny(jito, offset, seen) {
   const start = skipWhitespace(jito, offset)
   let tag = jito[start]
   if (tag === "[") {
@@ -302,7 +271,6 @@ export function parseAny(jito: string, offset: number, seen: Seen): { value: unk
     }
     return parseAny(jito, end + 1, seen)
   }
-
   const b64 = parseB64(jito, start, end)
   if (tag === ".") {
     return { value: toNumberMaybe(zigzagDecode(b64)), offset: end + 1 }
@@ -336,26 +304,21 @@ export function parseAny(jito: string, offset: number, seen: Seen): { value: unk
       return { value, offset: end + 1 }
     }
   }
-
   throw jitoSyntaxError(jito, offset)
 }
-
-function jitoSyntaxError(jito: string, offset: number) {
+function jitoSyntaxError(jito, offset) {
   return new SyntaxError(`Invalid JSONito at offset ${offset}: ${JSON.stringify(jito.slice(offset, offset + 10))}`)
 }
-
-function zigzagDecode(num: bigint) {
+function zigzagDecode(num) {
   return num % 2n === 0n ? num / 2n : -(num + 1n) / 2n
 }
-
-function toNumberMaybe(num: bigint) {
+function toNumberMaybe(num) {
   if (num > Number.MAX_SAFE_INTEGER || num < Number.MIN_SAFE_INTEGER) {
     return num
   }
   return Number(num)
 }
-
-export function skipWhitespace(str: string, offset: number): number {
+function skipWhitespace(str, offset) {
   const len = str.length
   let o = offset
   while (o < len) {
@@ -388,10 +351,8 @@ export function skipWhitespace(str: string, offset: number): number {
   }
   return o
 }
-
 const inB64 = new Set(BASE64)
-
-export function skipB64(str: string, offset: number): number {
+function skipB64(str, offset) {
   const len = str.length
   let o = offset
   while (o < len && inB64.has(str[o])) {
@@ -399,13 +360,11 @@ export function skipB64(str: string, offset: number): number {
   }
   return o
 }
-
-const fromB64 = new Map<string, number>([...BASE64].map((c, i) => [c, i]))
-
-export function parseB64(jito: string, start: number, end: number): bigint {
+const fromB64 = new Map([...BASE64].map((c, i) => [c, i]))
+function parseB64(jito, start, end) {
   let num = 0n
   for (let i = start; i < end; i++) {
-    const digit = BigInt(fromB64.get(jito[i])!)
+    const digit = BigInt(fromB64.get(jito[i]))
     num = num * 64n + digit
   }
   return num
