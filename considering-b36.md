@@ -493,3 +493,33 @@ Then there are possible future types
 - Bytes - `=`
 - Tag Ref - `&` (not pointing into named dictionary or inline values)
 - Fixed decimal (aka cents) - `$`
+
+## Base64 Wins After all!
+
+So while we were considering Base36 to improve usage in URLs, we ended up just optimizing the Base64 system to work better with URls and fixed a major flaw in the scope system.
+
+### Better symbol allocation
+
+- Integer - `'`
+- Decimal - `:` and `'`
+- Base64 String - `.`
+- UTF8 String - `~`
+- True/False/Null - `!` `F!` `N!`
+
+- Map - `{` and `}` *(or `(` and `)` in URL-Optimized mode)*
+- List - `[` and `]` *(or `(!` and `)` in URL-Optimized mode)*
+
+- Reference - `*`
+- External Dictionary - `@`
+- Multi-Value Delimeter `;`
+
+- Line Comment - `//`
+- Inline Comment - `/*` and `*/`
+
+### New Scope Semantics
+
+Scopes are implicit by encoding multiple values in series without a `;` delimeter.  Each value in the chain can reference any previous value by it's index.  When a `;` delimeter is encountered (or EOS), the final value is yielded and everything is reset.  This enables a socket to be a stream of values, each with their own inline shared values.
+
+This also means we don't need to worry about nested scopes as it's no longer possible.
+
+If a stream wishes to reuse shared subvalues among events/values in the stream, it can embed external dictionary IDs and then provide a way to request those via some side channel.
