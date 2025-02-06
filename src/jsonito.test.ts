@@ -1,5 +1,17 @@
 import { expect, test } from "bun:test"
-import { stringify, encodeB64, encodeSignedB64, splitDecimal } from "./jsonito.ts"
+import {
+  // decoder functions
+  stringify,
+  encodeB64,
+  encodeSignedB64,
+  splitDecimal,
+  // encoder functions
+  skipWhitespace,
+  skipB64,
+  parseB64,
+  parse,
+  EncodeOptions,
+} from "./jsonito.ts"
 
 test("splitDecimal", () => {
   expect(splitDecimal(0.1)).toEqual({ base: 1, exp: -1 })
@@ -133,6 +145,8 @@ test("encode integers", () => {
   expect(stringify(0xfn)).toEqual("u.")
   expect(stringify(0xffn)).toEqual("7-.")
   expect(stringify(0xfffn)).toEqual("1_-.")
+  expect(stringify(1926356574933776746956696518896066655086n)).toEqual("Jito_Loves_Big_Numbers.")
+  expect(stringify(44955042304169399691320774807464170904322762751n)).toEqual("-_Jito_Loves_Big_Numbers_-.")
 })
 
 test("smart decimal integers", () => {
@@ -307,499 +321,464 @@ const fruit = [
 
 test("encode duplicate values", () => {
   const l = new Array(35).fill(-2048)
-  // This is big enough that __+ is duplicated once the pointer cost gets over 2 bytes
-  // We only want to use pointers if they are actually smaller.
-  expect(stringify(l)).toEqual("__.[&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&]")
+  expect(stringify(l)).toEqual("__.[***********************************]")
 
   expect(stringify(fruit)).toEqual(
-    "color'fruits'apple'orange'[{&red'1&[2&a~strawberry]}{&green'1&[2&]}{&yellow'1&[2&banana']}{&3&1&[3&]}]",
-  )
-  expect(stringify([fruit, fruit, fruit])).toEqual(
-    "color'fruits'apple'orange'red'green'yellow'banana'a~strawberry[[{&4&1&[2&8&]}{&5&1&[2&]}{&6&1&[2&7&]}{&3&1&[3&]}][{&4&1&[2&8&]}{&5&1&[2&]}{&6&1&[2&7&]}{&3&1&[3&]}][{&4&1&[2&8&]}{&5&1&[2&]}{&6&1&[2&7&]}{&3&1&[3&]}]]",
+    "color'fruits'apple'orange'[{*red'1*[2*a~strawberry]}{*green'1*[2*]}{*yellow'1*[2*banana']}{*3*1*[3*]}]",
   )
 })
 
-// test('decode B64', () => {
-//   const input = new TextEncoder().encode('+1+9+a+z+A+Z+-+_+10+11')
-//   expect(decodeB64(input, 0)).toEqual([0, 0])
-//   expect(decodeB64(input, 1)).toEqual([1, 2])
-//   expect(decodeB64(input, 3)).toEqual([9, 4])
-//   expect(decodeB64(input, 5)).toEqual([10, 6])
-//   expect(decodeB64(input, 7)).toEqual([35, 8])
-//   expect(decodeB64(input, 9)).toEqual([36, 10])
-//   expect(decodeB64(input, 11)).toEqual([61, 12])
-//   expect(decodeB64(input, 13)).toEqual([62, 14])
-//   expect(decodeB64(input, 15)).toEqual([63, 16])
-//   expect(decodeB64(input, 17)).toEqual([64, 19])
-//   expect(decodeB64(input, 20)).toEqual([65, 22])
-//   expect(decodeB64(new TextEncoder().encode('This'))).toEqual([14488732, 4])
-//   expect(decodeB64(new TextEncoder().encode('is'))).toEqual([1180, 2])
-//   expect(decodeB64(new TextEncoder().encode('strange'))).toEqual([1955739563022, 7])
-//   expect(decodeB64(new TextEncoder().encode('HelloWorld'))).toEqual([778653614416704845n, 10])
-// })
+test("skip whitespace", () => {
+  expect(skipWhitespace("  \t\n\r", 0)).toEqual(5)
+  expect(skipWhitespace("  {  }  ", 0)).toEqual(2)
+  expect(skipWhitespace("  {  }  ", 2)).toEqual(2)
+  expect(skipWhitespace("  {  }  ", 3)).toEqual(5)
+  expect(skipWhitespace("  {  }  ", 5)).toEqual(5)
+  expect(skipWhitespace("  {  }  ", 6)).toEqual(8)
+  expect(skipWhitespace("  /*{  }*/  ", 0)).toEqual(12)
+  expect(skipWhitespace("  /*{  }*/X ", 0)).toEqual(10)
+  expect(skipWhitespace("  /*{  }*/X ", 10)).toEqual(10)
+  expect(skipWhitespace("  /*{  }*/X ", 11)).toEqual(12)
+  expect(skipWhitespace(" X/*{  }*/  ", 0)).toEqual(1)
+  expect(skipWhitespace(" X/*{  }*/  ", 1)).toEqual(1)
+  expect(skipWhitespace(" X/*{  }*/  ", 2)).toEqual(12)
+  expect(skipWhitespace(" X/*{  }*/X ", 2)).toEqual(10)
+  expect(skipWhitespace(" X/*{  }*/X ", 10)).toEqual(10)
+  expect(skipWhitespace(" X/*{  }*/X ", 11)).toEqual(12)
+  expect(skipWhitespace(" X/*{  }*/X ", 12)).toEqual(12)
+  expect(skipWhitespace("// test\n{ colors' [ red' green' blue ] }", 0)).toEqual(8)
+  expect(skipWhitespace("// test\n{ colors' [ red' green' blue ] }", 8)).toEqual(8)
+  expect(skipWhitespace("// test\n{ colors' [ red' green' blue ] }", 9)).toEqual(10)
+  expect(skipWhitespace("// test\n{ colors' [ red' green' blue ] }", 16)).toEqual(16)
+  expect(skipWhitespace("// test\n{ colors' [ red' green' blue ] }", 17)).toEqual(18)
+  expect(skipWhitespace("// test\n{ colors' [ red' green' blue ] }", 18)).toEqual(18)
+  expect(skipWhitespace("// test\n{ colors' [ red' green' blue ] }", 19)).toEqual(20)
+})
 
-// test('decode integers', () => {
-//   expect(parse('+')).toEqual(0)
-//   expect(parse('2+')).toEqual(1)
-//   expect(parse('o+')).toEqual(12)
-//   expect(parse('3S+')).toEqual(123)
-//   expect(parse('CA+')).toEqual(1234)
-//   expect(parse('61O+')).toEqual(12345)
-//   expect(parse('Yi0+')).toEqual(123456)
-//   expect(parse('9qQe+')).toEqual(1234567)
-//   expect(parse('1ucas+')).toEqual(12345678)
-//   expect(parse('eJVEG+')).toEqual(123456789)
-//   expect(parse('2jb0mA+')).toEqual(1234567890)
-//   expect(parse('1+')).toEqual(-1)
-//   expect(parse('n+')).toEqual(-12)
-//   expect(parse('3R+')).toEqual(-123)
-//   expect(parse('Cz+')).toEqual(-1234)
-//   expect(parse('61N+')).toEqual(-12345)
-//   expect(parse('Yh_+')).toEqual(-123456)
-//   expect(parse('9qQd+')).toEqual(-1234567)
-//   expect(parse('1ucar+')).toEqual(-12345678)
-//   expect(parse('eJVEF+')).toEqual(-123456789)
-//   expect(parse('2jb0mz+')).toEqual(-1234567890)
-//   expect(parse('iE5Yv-+')).toEqual(1e10 - 1)
-//   expect(parse('2WgXs_-+')).toEqual(1e11 - 1)
-//   expect(parse('t6Fix_-+')).toEqual(1e12 - 1)
-//   expect(parse('4z2sVj_-+')).toEqual(1e13 - 1)
-//   expect(parse('20+')).toEqual(64 ** 1)
-//   expect(parse('200+')).toEqual(64 ** 2)
-//   expect(parse('2000+')).toEqual(64 ** 3)
-//   expect(parse('20000+')).toEqual(64 ** 4)
-//   expect(parse('200000+')).toEqual(64 ** 5)
-//   expect(parse('2000000+')).toEqual(64 ** 6)
-//   expect(parse('20000000+')).toEqual(64 ** 7)
-//   expect(parse('200000000+')).toEqual(64 ** 8)
-//   expect(parse('2000000000+')).toEqual(64n ** 9n)
-//   expect(parse('20000000000+')).toEqual(64n ** 10n)
-//   expect(parse('200000000000+')).toEqual(64n ** 11n)
-//   expect(parse('2000000000000+')).toEqual(64n ** 12n)
-//   expect(parse('20000000000000+')).toEqual(64n ** 13n)
-//   expect(parse('200000000000000+')).toEqual(64n ** 14n)
-//   expect(parse('2000000000000000+')).toEqual(64n ** 15n)
-//   expect(parse('20000000000000000+')).toEqual(64n ** 16n)
-//   expect(parse('200000000000000000+')).toEqual(64n ** 17n)
-//   expect(parse('2000000000000000000+')).toEqual(64n ** 18n)
-//   expect(parse('20000000000000000000+')).toEqual(64n ** 19n)
-//   expect(parse('200000000000000000000+')).toEqual(64n ** 20n)
-// })
+test("skip B64", () => {
+  expect(skipB64("dead", 0)).toEqual(4)
+  expect(skipB64("dead ", 0)).toEqual(4)
+  expect(skipB64("dead'", 0)).toEqual(4)
+  expect(skipB64(" dead'", 0)).toEqual(0)
+  expect(skipB64(" dead'", 1)).toEqual(5)
+})
 
-// test('decode rationals', () => {
-//   expect(parse('2|3/')).toEqual(1 / 3)
-//   expect(parse('1|3/')).toEqual(-1 / 3)
-//   expect(parse('2|7/')).toEqual(1 / 7)
-//   expect(parse('1|7/')).toEqual(-1 / 7)
-//   expect(parse('c|7/')).toEqual(6 / 7)
-//   expect(parse('b|7/')).toEqual(-6 / 7)
-//   expect(parse('I|7/')).toEqual(22 / 7)
-//   expect(parse('61S|ji/')).toEqual(12347 / 1234)
-//   expect(parse('vg|fF/')).toEqual(1000 / 1001)
-//   expect(parse('2|/')).toEqual(1 / 0)
-//   expect(parse('1|/')).toEqual(-1 / 0)
-//   expect(parse('|/')).toBeNaN()
-//   expect(() => parse('2|0$')).toThrow()
-// })
+test("decode B64 strings", () => {
+  expect(parseB64("0", 0, 0)).toEqual(0n)
+  expect(parseB64("0", 0, 1)).toEqual(0n)
+  expect(parseB64("1", 0, 1)).toEqual(1n)
+  expect(parseB64("9", 0, 1)).toEqual(9n)
+  expect(parseB64("a", 0, 1)).toEqual(10n)
+  expect(parseB64("z", 0, 1)).toEqual(35n)
+  expect(parseB64("A", 0, 1)).toEqual(36n)
+  expect(parseB64("Z", 0, 1)).toEqual(61n)
+  expect(parseB64("-", 0, 1)).toEqual(62n)
+  expect(parseB64("_", 0, 1)).toEqual(63n)
+  expect(parseB64("10", 0, 2)).toEqual(64n)
+  expect(parseB64("This", 0, 4)).toEqual(14488732n)
+  expect(parseB64("is", 0, 2)).toEqual(1180n)
+  expect(parseB64("strange", 0, 7)).toEqual(1955739563022n)
+  expect(parseB64("HelloWorld", 0, 10)).toEqual(778653614416704845n)
+})
 
-// test('decode decimals', () => {
-//   expect(parse('2|1.')).toEqual(0.1)
-//   expect(parse('1|1.')).toEqual(-0.1)
-//   expect(parse('3a|1.')).toEqual(10.1)
-//   expect(parse('39|1.')).toEqual(-10.1)
-//   expect(parse('2|k.')).toEqual(1e10)
-//   expect(parse('1|k.')).toEqual(-1e10)
-//   expect(parse('2|j.')).toEqual(1e-10)
-//   expect(parse('1|j.')).toEqual(-1e-10)
-//   expect(parse('3S|5.')).toEqual(0.123)
-//   expect(parse('Yi0|b.')).toEqual(0.123456)
-//   expect(parse('eJVEG|h.')).toEqual(0.123456789)
-//   expect(parse('eJVEG|b.')).toEqual(123.456789)
-//   expect(parse('eJVEG|5.')).toEqual(123456.789)
-//   expect(parse('eJVEG|c.')).toEqual(123456789e6)
-//   expect(parse('eJVEG|i.')).toEqual(123456789e9)
-//   expect(parse('eJVEG|D.')).toEqual(123456789e-20)
-//   expect(parse('eJVEG|E.')).toEqual(123456789e20)
-//   expect(parse('eJVEG|1f.')).toEqual(123456789e-40)
-//   expect(parse('eJVEG|1g.')).toEqual(123456789e40)
-//   expect(parse('eJVEG|2v.')).toEqual(123456789e-80)
-//   expect(parse('eJVEG|2w.')).toEqual(123456789e80)
-//   expect(parse('eJVEG|4_.')).toEqual(123456789e-160)
-//   expect(parse('eJVEG|50.')).toEqual(123456789e160)
-//   expect(parse('eJVEG|9_.')).toEqual(123456789e-320)
-//   expect(parse('1731d28Rfy|v.')).toEqual(10000 / 10001)
-//   expect(parse('17271eVjl2|v.')).toEqual(10000 / 10003)
-//   expect(parse('170iK6cGvu|v.')).toEqual(10000 / 10007)
-//   expect(parse('mkEokiJF2|t.')).toEqual(Math.PI)
-//   expect(parse('mkEokiJF1|t.')).toEqual(-Math.PI)
-//   expect(parse('jk8qtAsha|t.')).toEqual(Math.E)
-//   expect(parse('jk8qtAsh9|t.')).toEqual(-Math.E)
-//   expect(parse('1Av6kkrUUe|v.')).toEqual(Math.SQRT2)
-//   expect(parse('1Av6kkrUUd|v.')).toEqual(-Math.SQRT2)
-// })
+test("decode integers", () => {
+  expect(parse(".")).toEqual(0)
+  expect(parse("2.")).toEqual(1)
+  expect(parse("o.")).toEqual(12)
+  expect(parse("3S.")).toEqual(123)
+  expect(parse("CA.")).toEqual(1234)
+  expect(parse("61O.")).toEqual(12345)
+  expect(parse("Yi0.")).toEqual(123456)
+  expect(parse("9qQe.")).toEqual(1234567)
+  expect(parse("1ucas.")).toEqual(12345678)
+  expect(parse("eJVEG.")).toEqual(123456789)
+  expect(parse("2jb0mA.")).toEqual(1234567890)
+  expect(parse("This.")).toEqual(7244366)
+  expect(parse("is.")).toEqual(590)
+  expect(parse("strange.")).toEqual(977869781511)
+  expect(parse("HelloWorld.")).toEqual(-389326807208352423n)
+  expect(parse("Content-Type.")).toEqual(1415998886219925623591n)
+  expect(parse("Accept-Encoding.")).toEqual(350012890167708495916995304n)
+  expect(parse("Jito_Loves_Big_Numbers.")).toEqual(1926356574933776746956696518896066655086n)
+  expect(parse("-_Jito_Loves_Big_Numbers_-.")).toEqual(44955042304169399691320774807464170904322762751n)
+  expect(parse("____________________.")).toEqual(64n ** 20n / -2n)
+  expect(parse("___________________.")).toEqual(64n ** 19n / -2n)
+  expect(parse("__________________.")).toEqual(64n ** 18n / -2n)
+  expect(parse("_________________.")).toEqual(64n ** 17n / -2n)
+  expect(parse("________________.")).toEqual(64n ** 16n / -2n)
+  expect(parse("_______________.")).toEqual(64n ** 15n / -2n)
+  expect(parse("______________.")).toEqual(64n ** 14n / -2n)
+  expect(parse("_____________.")).toEqual(64n ** 13n / -2n)
+  expect(parse("____________.")).toEqual(64n ** 12n / -2n)
+  expect(parse("___________.")).toEqual(64n ** 11n / -2n)
+  expect(parse("__________.")).toEqual(64n ** 10n / -2n)
+  expect(parse("_________.")).toEqual(64n ** 9n / -2n)
+  expect(parse("________.")).toEqual(64 ** 8 / -2)
+  expect(parse("_______.")).toEqual(64 ** 7 / -2)
+  expect(parse("______.")).toEqual(64 ** 6 / -2)
+  expect(parse("_____.")).toEqual(64 ** 5 / -2)
+  expect(parse("____.")).toEqual(64 ** 4 / -2)
+  expect(parse("___.")).toEqual(64 ** 3 / -2)
+  expect(parse("__.")).toEqual(64 ** 2 / -2)
+  expect(parse("_.")).toEqual(64 / -2)
+  expect(parse(".")).toEqual(0)
+  expect(parse("________Z.")).toEqual(Number.MIN_SAFE_INTEGER)
+  expect(parse("v________.")).toEqual(Number.MIN_SAFE_INTEGER / 2 - 1)
+  expect(parse("f________.")).toEqual((Number.MIN_SAFE_INTEGER / 2 - 1) / 2)
+  expect(parse("7________.")).toEqual((Number.MIN_SAFE_INTEGER / 2 - 1) / 4)
+  expect(parse("3________.")).toEqual((Number.MIN_SAFE_INTEGER / 2 - 1) / 8)
+  expect(parse("1________.")).toEqual((Number.MIN_SAFE_INTEGER / 2 - 1) / 16)
+  expect(parse("________.")).toEqual((Number.MIN_SAFE_INTEGER / 2 - 1) / 32)
+  expect(parse("________-.")).toEqual(Number.MAX_SAFE_INTEGER)
+  expect(parse("w00000000.")).toEqual(Number.MAX_SAFE_INTEGER / 2 + 1)
+  expect(parse("g00000000.")).toEqual((Number.MAX_SAFE_INTEGER / 2 + 1) / 2)
+  expect(parse("800000000.")).toEqual((Number.MAX_SAFE_INTEGER / 2 + 1) / 4)
+  expect(parse("400000000.")).toEqual((Number.MAX_SAFE_INTEGER / 2 + 1) / 8)
+  expect(parse("200000000.")).toEqual((Number.MAX_SAFE_INTEGER / 2 + 1) / 16)
+  expect(parse("100000000.")).toEqual((Number.MAX_SAFE_INTEGER / 2 + 1) / 32)
+})
 
-// test('decode primitives', () => {
-//   expect(parse('!')).toEqual(true)
-//   expect(parse('~')).toEqual(false)
-//   expect(parse('?')).toBeNull()
-// })
+test("decode b64 strings", () => {
+  expect(parse("short'")).toEqual("short")
+  expect(parse("Dash-it'")).toEqual("Dash-it")
+  expect(parse("CAP_CASE'")).toEqual("CAP_CASE")
+  expect(parse("1234'")).toEqual("1234")
+  // Leading zeroes are preserved
+  expect(parse("01234'")).toEqual("01234")
+  expect(parse("12345678'")).toEqual("12345678")
+  expect(parse("9~123456789")).toEqual("123456789")
+  expect(parse("a~ThisIsLong")).toEqual("ThisIsLong")
+})
 
-// test('decode b64 strings', () => {
-//   expect(parse('short@')).toEqual('short')
-//   expect(parse('Dash-it@')).toEqual('Dash-it')
-//   expect(parse('CAP_CASE@')).toEqual('CAP_CASE')
-//   expect(parse('1234@')).toEqual('1234')
-//   expect(parse('12345@')).toEqual('12345')
-//   expect(parse('123456@')).toEqual('123456')
-//   expect(parse('1234567@')).toEqual('1234567')
-//   expect(parse('12345678@')).toEqual('12345678')
-//   // Decoder accepts leading zeroes and large strings even though the encoder doesn't
-//   expect(parse('01234@')).toEqual('01234')
-//   expect(parse('123456789@')).toEqual('123456789')
-//   expect(parse('ThisIsLong@')).toEqual('ThisIsLong')
-// })
+test("decode decimals", () => {
+  expect(parse("1:2.")).toEqual(0.1)
+  expect(parse("1:1.")).toEqual(-0.1)
+  expect(parse("1:3a.")).toEqual(10.1)
+  expect(parse("1:39.")).toEqual(-10.1)
+  expect(parse("k:2.")).toEqual(1e10)
+  expect(parse("k:1.")).toEqual(-1e10)
+  expect(parse("j:2.")).toEqual(1e-10)
+  expect(parse("j:1.")).toEqual(-1e-10)
+  expect(parse("5:3S.")).toEqual(0.123)
+  expect(parse("b:Yi0.")).toEqual(0.123456)
+  expect(parse("h:eJVEG.")).toEqual(0.123456789)
+  expect(parse("b:eJVEG.")).toEqual(123.456789)
+  expect(parse("5:eJVEG.")).toEqual(123456.789)
+  expect(parse("c:eJVEG.")).toEqual(123456789e6)
+  expect(parse("i:eJVEG.")).toEqual(123456789e9)
+  expect(parse("D:eJVEG.")).toEqual(123456789e-20)
+  expect(parse("E:eJVEG.")).toEqual(123456789e20)
+  expect(parse("1f:eJVEG.")).toEqual(123456789e-40)
+  expect(parse("1g:eJVEG.")).toEqual(123456789e40)
+  expect(parse("2v:eJVEG.")).toEqual(123456789e-80)
+  expect(parse("2w:eJVEG.")).toEqual(123456789e80)
+  expect(parse("4_:eJVEG.")).toEqual(123456789e-160)
+  expect(parse("50:eJVEG.")).toEqual(123456789e160)
+  expect(parse("9_:eJVEG.")).toEqual(123456789e-320)
+  expect(parse("v:1731d28Rfy.")).toEqual(10000 / 10001)
+  expect(parse("v:17271eVjl2.")).toEqual(10000 / 10003)
+  expect(parse("v:170iK6cGvu.")).toEqual(10000 / 10007)
+  expect(parse("t:mkEokiJF2.")).toEqual(Math.PI)
+  expect(parse("t:mkEokiJF1.")).toEqual(-Math.PI)
+  expect(parse("t:jk8qtAsha.")).toEqual(Math.E)
+  expect(parse("t:jk8qtAsh9.")).toEqual(-Math.E)
+  expect(parse("v:1Av6kkrUUe.")).toEqual(Math.SQRT2)
+  expect(parse("v:1Av6kkrUUd.")).toEqual(-Math.SQRT2)
+  expect(parse("98:1_KZz-nRVF.")).toEqual(-Number.MAX_VALUE)
+  expect(parse("98:1_KZz-nRVI.")).toEqual(Number.MAX_VALUE)
+  expect(parse("a7:9.")).toEqual(-Number.MIN_VALUE)
+  expect(parse("a7:a.")).toEqual(Number.MIN_VALUE)
+})
 
-// test('decode strings', () => {
-//   expect(parse('$')).toEqual('')
-//   expect(parse('1$a')).toEqual('a')
-//   expect(parse('2$ab')).toEqual('ab')
-//   expect(parse('3$abc')).toEqual('abc')
-//   expect(parse(`a$${' '.repeat(10)}`)).toEqual(' '.repeat(10))
-//   expect(parse(`1A$${' '.repeat(100)}`)).toEqual(' '.repeat(100))
-//   expect(parse(`fE$${' '.repeat(1000)}`)).toEqual(' '.repeat(1000))
-// })
+test("decode primitives", () => {
+  expect(parse("!")).toEqual(true)
+  expect(parse("F!")).toEqual(false)
+  expect(parse("N!")).toBeNull()
+})
 
-// test('decode bytes', () => {
-//   expect(parse('=')).toEqual(new Uint8Array([]))
-//   expect(parse('2=AA')).toEqual(new Uint8Array([0]))
-//   expect(parse('3=AAA')).toEqual(new Uint8Array([0, 0]))
-//   expect(parse('4=AAAA')).toEqual(new Uint8Array([0, 0, 0]))
-//   expect(parse('4=BCDE')).toEqual(new Uint8Array([0b00000100, 0b00100000, 0b11000100]))
-//   expect(parse('4=EDCB')).toEqual(new Uint8Array([0b00010000, 0b00110000, 0b10000001]))
-//   expect(parse('6=AQIDBA')).toEqual(new Uint8Array([1, 2, 3, 4]))
-//   expect(parse('e=ICAgICAgICAgIA')).toEqual(new Uint8Array(10).fill(32))
-//   expect(parse('e=f39_f39_f39_fw')).toEqual(new Uint8Array(10).fill(127))
-//   expect(parse('2=_w')).toEqual(new Uint8Array(1).fill(255))
-//   expect(parse('3=__8')).toEqual(new Uint8Array(2).fill(255))
-//   expect(parse('4=____')).toEqual(new Uint8Array(3).fill(255))
-//   expect(parse('e=_____________w')).toEqual(new Uint8Array(10).fill(255))
-//   expect(parse('f=______________8')).toEqual(new Uint8Array(11).fill(255))
-//   expect(parse('g=________________')).toEqual(new Uint8Array(12).fill(255))
-//   expect(parse('6=ICAgIA')).toEqual(new Uint8Array([0xde, 0xad, 0xbe, 0xef]).fill(32))
-//   expect(
-//     parse(
-//       '26=aJYUduXBG2pla3pq3c4U6xw9McHqLgKExQqQra05dvDUoSl6i195ta-4WYAdQ7O5t2WispUYJZFu2efiwJDw7kTDtKE8ui1XMJXVzJGrgly_Qxz6DJenUh7H1esM51qm8p1XJQ',
-//     ),
-//   ).toEqual(
-//     new Uint8Array([
-//       104, 150, 20, 118, 229, 193, 27, 106, 101, 107, 122, 106, 221, 206, 20, 235, 28, 61, 49, 193, 234, 46, 2, 132,
-//       197, 10, 144, 173, 173, 57, 118, 240, 212, 161, 41, 122, 139, 95, 121, 181, 175, 184, 89, 128, 29, 67, 179, 185,
-//       183, 101, 162, 178, 149, 24, 37, 145, 110, 217, 231, 226, 192, 144, 240, 238, 68, 195, 180, 161, 60, 186, 45, 87,
-//       48, 149, 213, 204, 145, 171, 130, 92, 191, 67, 28, 250, 12, 151, 167, 82, 30, 199, 213, 235, 12, 231, 90, 166,
-//       242, 157, 87, 37,
-//     ]),
-//   )
-// })
+test("decode strings", () => {
+  expect(parse("~")).toEqual("")
+  expect(parse("1~a")).toEqual("a")
+  expect(parse("2~ab")).toEqual("ab")
+  expect(parse("3~abc")).toEqual("abc")
+  expect(parse(`a~${" ".repeat(10)}`)).toEqual(" ".repeat(10))
+  expect(parse(`1A~${" ".repeat(100)}`)).toEqual(" ".repeat(100))
+  expect(parse(`fE~${" ".repeat(1000)}`)).toEqual(" ".repeat(1000))
+})
 
-// test('decode lists', () => {
-//   // Decode uncounted lists
-//   expect(parse(';')).toEqual([])
-//   expect(parse('1;+')).toEqual([0])
-//   expect(parse('2;+!')).toEqual([0, true])
-//   expect(parse('3;+!~')).toEqual([0, true, false])
-//   expect(parse('6;2+4+6+')).toEqual([1, 2, 3])
-//   expect(parse('1;;')).toEqual([[]])
-//   expect(parse('3;1;;')).toEqual([[[]]])
-//   expect(parse('c;1;;2;;;3;;;;')).toEqual([[[]], [[], []], [[], [], []]])
+test("decode lists", () => {
+  expect(parse("[]")).toEqual([])
+  expect(parse("[.]")).toEqual([0])
+  expect(parse("[.!]")).toEqual([0, true])
+  expect(parse("[.!F!]")).toEqual([0, true, false])
+  expect(parse("[2.4.6.]")).toEqual([1, 2, 3])
+  expect(parse("[[]]")).toEqual([[]])
+  expect(parse("[[[]]]")).toEqual([[[]]])
+  expect(parse("[[[]][[][]][[][][]]]")).toEqual([[[]], [[], []], [[], [], []]])
+})
 
-//   // Decode always counted lists
-//   expect(parse('|;')).toEqual([])
-//   expect(parse('1|1;+')).toEqual([0])
-//   expect(parse('2|2;+!')).toEqual([0, true])
-//   expect(parse('3|3;+!~')).toEqual([0, true, false])
-//   expect(parse('6|3;2+4+6+')).toEqual([1, 2, 3])
-//   expect(parse('2|1;|;')).toEqual([[]])
-//   expect(parse('6|1;2|1;|;')).toEqual([[[]]])
-//   expect(parse('o|3;2|1;|;4|2;|;|;6|3;|;|;|;')).toEqual([[[]], [[], []], [[], [], []]])
+test("decode lists with whitespace", () => {
+  expect(parse(" [ . ] ")).toEqual([0])
+  expect(parse(" [ . ! ] ")).toEqual([0, true])
+  expect(parse(" [ . ! F! ] ")).toEqual([0, true, false])
+  expect(parse(" [ 2. 4. 6. ] ")).toEqual([1, 2, 3])
+  expect(parse("[\n  [ ]\n]")).toEqual([[]])
+  expect(parse("// nested arrays\n[\n  [\n    [ ]\n  ]\n]\n")).toEqual([[[]]])
+})
 
-//   // decode partially counted lists
-//   expect(parse('e|3;1;;2;;;3|3;;;;')).toEqual([[[]], [[], []], [[], [], []]])
+test("decode maps", () => {
+  expect(parse("{}")).toEqual({})
+  expect(parse("{a'.}")).toEqual({ a: 0 })
+  expect(parse("{a'.b'!}")).toEqual({ a: 0, b: true })
+  expect(parse("{a'.b'!c'{}}")).toEqual({ a: 0, b: true, c: {} })
+  expect(parse("{2.4.}")).toEqual(new Map([[1, 2]]))
+  expect(parse("{!.F!2.N!4.[]6.{}8.a.five'}")).toEqual(
+    new Map([
+      [true, 0],
+      [false, 1],
+      [null, 2],
+      [[], 3],
+      [{}, 4],
+      [5, "five"],
+    ]),
+  )
+})
 
-//   // decode pretty-printed lists
-//   expect(parse('3;\n +')).toEqual([0])
-//   expect(parse('6;\n +\n !')).toEqual([0, true])
-//   expect(parse('9|3;\n +\n !\n ~')).toEqual([0, true, false])
-//   expect(parse('c|3;\n 2+\n 4+\n 6+')).toEqual([1, 2, 3])
-//   expect(parse('3;\n ;')).toEqual([[]])
-//   expect(parse('8;\n 4;\n  ;')).toEqual([[[]]])
-//   expect(parse('C|3;\n 4;\n  ;\n 8;\n  ;\n  ;\n c|3;\n  ;\n  ;\n  ;')).toEqual([[[]], [[], []], [[], [], []]])
-// })
+test("decode references", () => {
+  // Only return the last value
+  expect(parse("One'Two'Three'")).toEqual("Three")
+  // Grab the first value
+  expect(parse("One'Two'*")).toEqual("One")
+  // Grab the second value
+  expect(parse("One'Two'1*")).toEqual("Two")
+  // Each value can reference the value before it
+  expect(parse("[One'][*Two'][1*Three'][2*1**]")).toEqual([[[["One"], "Two"], "Three"], [["One"], "Two"], ["One"]])
+})
 
-// test('decode objects and maps', () => {
-//   const complexMap = new Map<unknown, unknown>([
-//     [true, 0],
-//     [false, 1],
-//     [null, 2],
-//     [[], 3],
-//     [{}, 4],
-//     [5, 'five'],
-//   ])
-//   // decode non-counted objects
-//   expect(parse(':')).toEqual({})
-//   expect(parse('3:a@+')).toEqual({ a: 0 })
-//   expect(parse('6:a@+b@!')).toEqual({ a: 0, b: true })
-//   expect(parse('9:a@+b@!c@:')).toEqual({ a: 0, b: true, c: {} })
-//   expect(parse('4:2+4+')).toEqual(new Map([[1, 2]]))
-//   expect(parse('l:!+~2+?4+;6+:8+a+five@')).toEqual(complexMap)
-//   // decode counted objects
-//   expect(parse('|:')).toEqual({})
-//   expect(parse('3|1:a@+')).toEqual({ a: 0 })
-//   expect(parse('6|2:a@b@+!')).toEqual({ a: 0, b: true })
-//   expect(parse('a|3:a@b@c@+!|:')).toEqual({ a: 0, b: true, c: {} })
-//   expect(parse('4|1:2+4+')).toEqual(new Map([[1, 2]]))
-//   expect(parse('m|6:!~?;|:a++2+4+6+8+five@')).toEqual(complexMap)
-//   // Decode with mixed limits
-//   expect(parse('9|3:a@b@c@+!:')).toEqual({ a: 0, b: true, c: {} })
-//   // Decode pretty-printed
-//   expect(parse(':')).toEqual({})
-//   expect(parse('6:\n a@ +')).toEqual({ a: 0 })
-//   expect(parse('f|2:\n a@\n b@\n\n +\n !')).toEqual({ a: 0, b: true })
-//   expect(parse('m|3:\n a@\n b@\n c@\n\n +\n !\n :')).toEqual({ a: 0, b: true, c: {} })
-//   expect(parse('7:\n 2+ 4+')).toEqual(new Map([[1, 2]]))
-//   expect(parse('K|6:\n !\n ~\n ?\n ;\n :\n a+\n\n +\n 2+\n 4+\n 6+\n 8+\n five@')).toEqual(complexMap)
-// })
+test("encode and decode with external dictionaries", () => {
+  // Define some shared datasets
+  const names = ["Alice", "Bob", "Eve"]
+  const fruits = ["apple", "banana", "cherry"]
 
-// test('decode pointers', () => {
-//   expect(parse('*+')).toEqual(0)
-//   expect(parse('2*  1+')).toEqual(-1)
-//   expect(parse('2*  10+')).toEqual(32)
-//   expect(parse('4*___+10+')).toEqual(32)
-//   expect(parse('17;__+_*Z*X*V*T*R*P*N*L*J*H*F*D*B*z*x*v*t*r*p*n*l*j*h*f*d*b*9*7*5*3*1**__+')).toEqual(
-//     new Array(35).fill(-2048),
-//   )
-// })
+  // Create a large sample doc that uses these and has other duplicated values apart from these.
+  const doc = {
+    people: {
+      xx12: { name: "Alice", age: 30, fruits: ["apple", "banana"] },
+      xx34: { name: "Bob", age: 40, fruits: ["banana", "cherry"] },
+      xx56: { name: "Eve", age: 50, fruits: ["cherry", "apple", "peach"] },
+    },
+  }
 
-// test('decode string chains', () => {
-//   expect(parse('d,1**8$/segment')).toEqual('/segment/segment/segment')
-//   expect(parse('k,8*6$/o/n/e8$/segment')).toEqual('/segment/o/n/e/segment')
-// })
+  const encoded = stringify(doc)
+  expect(encoded).toEqual(
+    "name'age'fruits'apple'banana'cherry'{people'{xx12'{*Alice'1*Y.2*[3*4*]}xx34'{*Bob'1*1g.2*[4*5*]}xx56'{*Eve'1*1A.2*[5*3*peach']}}}",
+  )
+  expect(parse(encoded)).toEqual(doc)
 
-// test('decode known values', () => {
-//   expect(parse('1m;p:G*3$redO*e;U*a$strawberryf:f*5$greenl*2;r*E:5$color6$yellow6$fruitsf;5$apple6$banana')).toEqual(
-//     fruit,
-//   )
-//   const options: DecodeOptions = {
-//     knownValues: [
-//       'color',
-//       'red',
-//       'orange',
-//       'yellow',
-//       'green',
-//       'blue',
-//       'violet',
-//       'fruits',
-//       'apple',
-//       'banana',
-//       'strawberry',
-//     ],
-//   }
-//   expect(parse('B;b:&1&7&4;8&a&9:&4&7&2;8&b:&3&7&4;8&9&', options)).toEqual(fruit)
-// })
+  const encodedWithNames = stringify(doc, { dictionaries: { names } })
+  expect(encodedWithNames).toEqual(
+    "name'age'fruits'apple'banana'cherry'names@{people'{xx12'{*6*1*Y.2*[3*4*]}xx34'{*7*1*1g.2*[4*5*]}xx56'{*8*1*1A.2*[5*3*peach']}}}",
+  )
+  expect(parse(encodedWithNames, { dictionaries: { names } })).toEqual(doc)
 
-// test('decode values with whitespace', () => {
-//   expect(
-//     parse(
-//       '2n;\n M:\n  1h*\n  3$red\n  1o*\n  n;\n   1s*\n   a$strawberry\n v:\n  u*\n  5$green\n  A*\n  6;\n   F*\n Y:\n  5$color\n  6$yellow\n  6$fruits\n  n;\n   5$apple\n   6$banana',
-//     ),
-//   ).toEqual(fruit)
-// })
+  const encodedWithFruits = stringify(doc, { dictionaries: { fruits } })
+  expect(encodedWithFruits).toEqual(
+    "name'age'fruits'fruits@{people'{xx12'{*Alice'1*Y.2*[3*4*]}xx34'{*Bob'1*1g.2*[4*5*]}xx56'{*Eve'1*1A.2*[5*3*peach']}}}",
+  )
+  expect(parse(encodedWithFruits, { dictionaries: { fruits } })).toEqual(doc)
 
-// test('encode README values', () => {
-//   expect(stringify('Banana')).toEqual('Banana@')
-//   expect(stringify('Hi, World')).toEqual('9$Hi, World')
-//   expect(stringify('🍌')).toEqual('4$🍌')
-//   expect(stringify([1, 2, 3])).toEqual('6;2+4+6+')
-//   expect(stringify([100, 100, 100])).toEqual('6;1**38+')
-//   expect(stringify({ a: 1, b: 2, c: 3 })).toEqual('c|3:a@b@c@2+4+6+')
-//   expect(stringify([{ name: 'Alice' }, { name: 'Bob' }])).toEqual('l;8:8*Alice@9:name@Bob@')
+  const encodedWithBoth = stringify(doc, { dictionaries: { names, fruits } })
+  expect(encodedWithBoth).toEqual(
+    "name'age'fruits'names@fruits@{people'{xx12'{*3*1*Y.2*[6*7*]}xx34'{*4*1*1g.2*[7*8*]}xx56'{*5*1*1A.2*[8*6*peach']}}}",
+  )
+  expect(parse(encodedWithBoth, { dictionaries: { names, fruits } })).toEqual(doc)
+})
 
-//   const sampleDoc = {
-//     person: {
-//       name: 'John Doe',
-//       age: 30,
-//       id: 12345,
-//       'ai-generated': true,
-//     },
-//     list: [1, 2, 3, 4, 5],
-//     nested: {
-//       key: 'value',
-//       nested: {
-//         key: 'value',
-//       },
-//     },
-//   }
+test("encode README values", () => {
+  expect(stringify("Banana")).toEqual("Banana'")
+  expect(stringify("Hi, World")).toEqual("9~Hi, World")
+  expect(stringify("🍌")).toEqual("4~🍌")
+  expect(stringify([1, 2, 3])).toEqual("[2.4.6.]")
+  expect(stringify([100, 100, 100])).toEqual("38.[***]")
+  expect(stringify({ a: 1, b: 2, c: 3 })).toEqual("{a'2.b'4.c'6.}")
+  expect(stringify([{ name: "Alice" }, { name: "Bob" }])).toEqual("name'[{*Alice'}{*Bob'}]")
 
-//   const encoded1 = stringify(sampleDoc)
-//   expect(encoded1).toEqual(
-//     '1B|3:person@list@11*H|4:name@age@id@c$ai-generated8$John DoeY+61O+!a;2+4+6+8+a+n|2:b*nested@6*a:key@value@',
-//   )
+  const sampleDoc = {
+    person: {
+      name: "John Doe",
+      age: 30,
+      id: 12345,
+      "ai-generated": true,
+    },
+    list: [1, 2, 3, 4, 5],
+    nested: {
+      key: "value",
+      nested: {
+        key: "value",
+      },
+    },
+  }
 
-//   const decoded1 = parse(encoded1)
-//   expect(decoded1).toEqual(sampleDoc)
+  const encoded1 = stringify(sampleDoc)
+  expect(encoded1).toEqual(
+    "nested'key'value'{person'{name'8~John Doeage'Y.id'61O.c~ai-generated!}list'[2.4.6.8.a.]*{1*2**{1*2*}}}",
+  )
 
-//   expect(stringify([100, 100, 100])).toEqual('6;1**38+')
+  const decoded1 = parse(encoded1)
+  expect(decoded1).toEqual(sampleDoc)
 
-//   const doc = {
-//     method: 'GET',
-//     scheme: 'https',
-//     host: 'example.com',
-//     port: 443,
-//     path: '/',
-//     headers: [
-//       ['accept', 'application/json'],
-//       ['user-agent', 'Mozilla/5.0'],
-//     ],
-//   }
-//   const known = [
-//     'method',
-//     'GET',
-//     'POST',
-//     'PUT',
-//     'DELETE',
-//     'scheme',
-//     'http',
-//     'https',
-//     'host',
-//     'port',
-//     'path',
-//     '/',
-//     80,
-//     443,
-//     'headers',
-//     'accept',
-//     'user-agent',
-//     ['accept', 'application/json'],
-//   ]
-//   expect(stringify(doc, { knownValues: known })).toEqual('R|6:&5&8&9&a&e&1&7&b$example.comd&b&j;h&f;g&b$Mozilla/5.0')
+  expect(stringify([100, 100, 100])).toEqual("38.[***]")
 
-//   // Some common values in an http response that
-//   // both sides know about (similar to HTTP2 HPACK)
-//   const opts = {
-//     knownValues: [
-//       'headers',
-//       'body',
-//       'Content-Length',
-//       ['Content-Type', 'application/json'],
-//       ['Content-Type', 'application/json; charset=utf-8'],
-//       // Common status codes
-//       'status',
-//       200,
-//       404,
-//       308,
-//     ],
-//   }
+  const doc = {
+    method: "GET",
+    scheme: "https",
+    host: "example.com",
+    port: 443,
+    path: "/",
+    headers: [
+      ["accept", "application/json"],
+      ["user-agent", "Mozilla/5.0"],
+    ],
+  }
+  const basic = [
+    "method",
+    "GET",
+    "POST",
+    "PUT",
+    "DELETE",
+    "scheme",
+    "http",
+    "https",
+    "host",
+    "port",
+    "path",
+    "/",
+    80,
+    443,
+    "headers",
+    "accept",
+    "user-agent",
+    "application/json",
+  ]
 
-//   const body = JSON.stringify({ hello: 'world' })
-//   const httpResponse = {
-//     status: 200,
-//     headers: [
-//       ['Content-Type', 'application/json'],
-//       ['Content-Length', body.length],
-//     ],
-//     body,
-//   }
-//   const encoded = stringify(httpResponse, opts)
-//   expect(encoded).toEqual('A|3:5&&1&6&8;3&4;2&y+h${"hello":"world"}')
-//   const decoded = parse(encoded, opts)
-//   expect(decoded).toEqual(httpResponse)
-// })
+  expect(stringify(doc, { dictionaries: { basic } })).toEqual(
+    "basic@{*1*5*7*8*b~example.com9*d*a*b*e*[[f*h*][g*b~Mozilla/5.0]]}",
+  )
 
-// test('encode README tables', () => {
-//   const samples: [string, string?, EncodeOptions?][] = [
-//     ['0', 'Integers'],
-//     ['-1'],
-//     ['1'],
-//     ['-25'],
-//     ['2000'],
-//     ['-125000'],
-//     ['8654321'],
-//     ['1/3', 'Rational'],
-//     ['-13/7'],
-//     ['1/0', 'Infinity'],
-//     ['-1/0', '-Infinity'],
-//     ['0/0', 'NaN'],
-//     ['20.24', 'Decimal'],
-//     ['1e100'],
-//     ['-1e-200'],
-//     ['Math.PI'],
-//     ['Math.sqrt(3)'],
-//     ['true', 'True'],
-//     ['false', 'False'],
-//     ['null', 'Null'],
-//     ["''", 'Empty String'],
-//     ["'Banana'", 'B64 String'],
-//     ["'Hi, World'", 'String'],
-//     ["'🍌'", 'UTF-8 String'],
-//     ['[ 1, 2, 3] ', 'Lists', { listCountedLimit: Infinity }],
-//     ['[ 100, 100, 100 ]', 'Lists with Pointers'],
-//     ['[ 1, 2, 3 ]', 'Counted Lists', { listCountedLimit: 1 }],
-//     ['{ a: 1, b: 2, c: 3 }', 'Maps', { mapCountedLimit: Infinity }],
-//     ['{ a: 1, b: 2, c: 3 }', 'Counted Maps', { mapCountedLimit: 1 }],
-//     ["[ { name: 'Alice' }, { name: 'Bob' } ]", 'Repeated Keys'],
-//     ['new Map([[1,2],[3,4]])', 'Non-string Keys'],
-//     ['new Uint8Array([213,231,187])', 'Bytes'],
-//   ]
-//   const table: string[] = []
-//   const opts: EncodeOptions = {}
-//   for (const [js, desc, newOpts] of samples) {
-//     if (newOpts) {
-//       Object.assign(opts, newOpts)
-//     }
-//     let json: string
-//     let val: unknown
-//     try {
-//       val = JSON.parse(js)
-//       json = js
-//     } catch (_) {
-//       // biome-ignore lint/security/noGlobalEval: <explanation>
-//       val = eval(`(${js})`)
-//       if (
-//         (typeof val === 'number' && !Number.isFinite(val)) ||
-//         (val && typeof val === 'object' && (val instanceof Map || ArrayBuffer.isView(val)))
-//       ) {
-//         json = ''
-//       } else {
-//         json = JSON.stringify(val)
-//       }
-//     }
-//     const encoded = stringify(val, opts)
-//     const input = `\`${js}\``
-//     const inter = json ? `\`${json}\`` : 'N/A'
-//     const output = `\`${encoded}\``
-//     table.push(
-//       `| ${input.padStart(10)} |${inter.padStart(28)} | ${output.replace(/\|/g, '\\|').padEnd(28)} | ${(desc ?? '').padEnd(30)} |`,
-//     )
-//   }
-//   // biome-ignore lint/suspicious/noConsoleLog: Printed on purpose
-//   // biome-ignore lint/suspicious/noConsole: so that we can copy-paste into the README
-//   console.log(table.join('\n'))
-//   // biome-ignore lint/suspicious/noConsoleLog: Printed on purpose
-//   // biome-ignore lint/suspicious/noConsole: so that we can copy-paste into the README
-//   console.log(
-//     stringify({
-//       person: {
-//         name: 'John Doe',
-//         age: 30,
-//         id: 12345,
-//         'ai-generated': true,
-//       },
-//       list: [1, 2, 3, 4, 5],
-//       nested: {
-//         key: 'value',
-//         nested: {
-//           key: 'value',
-//         },
-//       },
-//     }),
-//   )
-// })
+  // Some common values in an http response that
+  // both sides know about (similar to HTTP2 HPACK)
+  const opts: EncodeOptions = {
+    dictionaries: {
+      http: [
+        "headers",
+        "body",
+        "Content-Length",
+        "Content-Type",
+        "application/json",
+        "application/json; charset=utf-8",
+        // Common status codes
+        "status",
+        200,
+        404,
+        308,
+      ],
+    },
+  }
+
+  const body = JSON.stringify({ hello: "world" })
+  const httpResponse = {
+    status: 200,
+    headers: [
+      ["Content-Type", "application/json"],
+      ["Content-Length", body.length],
+    ],
+    body,
+  }
+  const encoded = stringify(httpResponse, opts)
+  expect(encoded).toEqual('http@{6*7**[[3*4*][2*y.]]1*h~{"hello":"world"}}')
+  const decoded = parse(encoded, opts)
+  expect(decoded).toEqual(httpResponse)
+})
+
+test("encode README tables", () => {
+  const samples: [string, string?, EncodeOptions?][] = [
+    ["0", "Integers"],
+    ["-1"],
+    ["1"],
+    ["-25"],
+    ["2000"],
+    ["-125000"],
+    ["8654321"],
+    ["20.24", "Decimal"],
+    ["1e100"],
+    ["-1e-200"],
+    ["Math.PI"],
+    ["Math.sqrt(3)"],
+    ["true", "True"],
+    ["false", "False"],
+    ["null", "Null"],
+    ["''", "Empty String"],
+    ["'Banana'", "B64 String"],
+    ["'Hi, World'", "String"],
+    ["'🍌'", "UTF-8 String"],
+    ["[ 1, 2, 3] ", "Lists"],
+    ["[ 100, 100, 100 ]", "Lists with Pointers"],
+    ["{ a: 1, b: 2, c: 3 }", "Maps"],
+    ["[ { name: 'Alice' }, { name: 'Bob' } ]", "Repeated Keys"],
+    ["new Map([[1,2],[3,4]])", "Non-string Keys"],
+    ["new Uint8Array([213,231,187])", "Bytes"],
+  ]
+  const table: string[] = []
+  const opts: EncodeOptions = {}
+  for (const [js, desc, newOpts] of samples) {
+    if (newOpts) {
+      Object.assign(opts, newOpts)
+    }
+    let json: string
+    let val: unknown
+    try {
+      val = JSON.parse(js)
+      json = js
+    } catch (_) {
+      // biome-ignore lint/security/noGlobalEval: <explanation>
+      val = eval(`(${js})`)
+      if (
+        (typeof val === "number" && !Number.isFinite(val)) ||
+        (val && typeof val === "object" && (val instanceof Map || ArrayBuffer.isView(val)))
+      ) {
+        json = ""
+      } else {
+        json = JSON.stringify(val)
+      }
+    }
+    const encoded = stringify(val, opts)
+    const input = `\`${js}\``
+    const inter = json ? `\`${json}\`` : "N/A"
+    const output = `\`${encoded}\``
+    table.push(
+      `| ${input.padStart(10)} |${inter.padStart(28)} | ${output.replace(/\|/g, "\\|").padEnd(28)} | ${(desc ?? "").padEnd(30)} |`,
+    )
+  }
+  // biome-ignore lint/suspicious/noConsoleLog: Printed on purpose
+  // biome-ignore lint/suspicious/noConsole: so that we can copy-paste into the README
+  console.log(table.join("\n"))
+  // biome-ignore lint/suspicious/noConsoleLog: Printed on purpose
+  // biome-ignore lint/suspicious/noConsole: so that we can copy-paste into the README
+  console.log(
+    stringify({
+      person: {
+        name: "John Doe",
+        age: 30,
+        id: 12345,
+        "ai-generated": true,
+      },
+      list: [1, 2, 3, 4, 5],
+      nested: {
+        key: "value",
+        nested: {
+          key: "value",
+        },
+      },
+    }),
+  )
+})
