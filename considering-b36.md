@@ -500,9 +500,9 @@ So while we were considering Base36 to improve usage in URLs, we ended up just o
 
 ### Better symbol allocation
 
-- Integer - `'`
-- Decimal - `:` and `'`
-- Base64 String - `.`
+- Integer - `.`
+- Decimal - `:` and `.`
+- Base64 String - `'`
 - UTF8 String - `~`
 - True/False/Null - `!` `F!` `N!`
 
