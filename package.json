@@ -1,6 +1,6 @@
 {
   "name": "jsonito",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "description": "El sobrinito de JSON",
   "main": "dist/jsonito.js",
   "types": "dist/jsonito.d.ts",
