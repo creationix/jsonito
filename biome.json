@@ -37,9 +37,7 @@
         "all": true
       },
       "suspicious": {
-        "all": true,
-        "noConsole": "off",
-        "noConsoleLog": "off"
+        "all": true
       }
     }
   },

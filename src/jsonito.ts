@@ -238,7 +238,6 @@ export function parse(jito: string, opts: DecodeOptions = {}): unknown {
   let offset = skipWhitespace(jito, 0)
   while (offset < len) {
     const { value, offset: newOffset } = parseAny(jito, offset, seen)
-    console.log("PARSED VALUE", { value, offset })
     offset = skipWhitespace(jito, newOffset)
     seen.push(value)
   }
