@@ -6,6 +6,14 @@ JSONito (or **Jito** for short) is a close relative of the JSON serialization fo
 
 Additionally, the character set has been chosen with care to embed seamlessly inside JSON strings, URL query strings, HTTP headers, or anywhere you might want to tuck away a little piece of configuration as text.
 
+## Installation
+
+```sh
+$> npm i --save jsonito
+```
+
+Or just copy the code to your project.  It's a single typescript file with no dependencies.
+
 ## Usage
 
 If you want to jump right on in and use this as a JSON replacement, this module exports `stringify` and `parse` functions.
