@@ -1,6 +1,10 @@
 {
   "name": "jsonito",
-  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/creationix/jsonito"
+  },
+  "version": "0.1.1",
   "description": "El sobrinito de JSON",
   "main": "dist/jsonito.js",
   "types": "dist/jsonito.d.ts",
