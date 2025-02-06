@@ -1,4 +1,4 @@
-
+"use strict"
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Tim Caswell
 Object.defineProperty(exports, "__esModule", { value: true })
