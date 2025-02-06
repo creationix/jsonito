@@ -9,7 +9,7 @@ Additionally, the character set has been chosen with care to embed seamlessly in
 ## Installation
 
 ```sh
-$> npm i --save jsonito
+npm i --save jsonito
 ```
 
 Or just copy the code to your project.  It's a single typescript file with no dependencies.
