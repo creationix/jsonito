@@ -129,7 +129,7 @@ Going back to the sample doc in JITO
           }
           {
             & Open:
-            1& 9$OpenDoc() 
+            1& 9$OpenDoc()
           }
           {
             & Close:
@@ -158,7 +158,7 @@ It becomes:
             1* e-CreateNewDoc()
           2M
             * 4-Open
-            1* 9-OpenDoc() 
+            1* 9-OpenDoc()
           2M
             * 5-Close
             1* a-CloseDoc()
@@ -286,16 +286,16 @@ And finally, our final optimized b64 variant pretty printed with commentary (mad
 
 ```jito
 // This can be referenced later as `*`
-value.        
+value.
 
 // This can be referenced later as `1*`
-onclick.      
+onclick.
 
 // This object is the value returned when parsing
 ( menu. (
-    id. file. 
+    id. file.
     * File.
-    popup. ( 
+    popup. (
       menuitem. 3!
         ( * New.
           1* e~CreateNewDoc() )
@@ -304,7 +304,7 @@ onclick.
         ( * Close.
           1* a~CloseDoc() )
     )
-  ) 
+  )
 )
 ```
 
@@ -393,14 +393,14 @@ The same formatting with the other sample doc is:
 
 ```jito
 // Shared Values
-value.    // *    
-onclick.  // 1*    
+value.    // *
+onclick.  // 1*
 
 // Root Value
 { menu. {
-    id. file. 
+    id. file.
     * File.
-    popup. { 
+    popup. {
       menuitem. [
         { * New.
           1* e~CreateNewDoc() }
@@ -410,7 +410,7 @@ onclick.  // 1*
           1* a~CloseDoc() }
       ]
     }
-  } 
+  }
 }
 ```
 
@@ -419,6 +419,8 @@ yeah, I think the formatting rule is inline first-line is allowed if:
 - the opening token (`{` or `[`) is the first token on the line
 - or the entire first line would fit inline within the 64 chars
 
+
+## Url Safe?
 
 Now going back to url safe encoding.  We can have a url safe variant that only tweaks the `{`, `}`, `[` and `]` chars and replace them with `(`, `)`, `(!`, and `)`.
 
@@ -443,3 +445,51 @@ orange. // 3*
 ```
 
 Which isn't bad, but more lisp/scheme than JSON in flavor.
+
+## Primitives Strike Again
+
+OOPS, I forgot about `true`, `false`, and `null`.  I can't use `T`, `F`, and `N` in b64 mode, hmm...
+
+Let's review.  First enumerate the symbols:
+
+- `0-9` `a-z` `A-Z` `_` `-` - reserved for the base 64 digits and can't be used for any tags.
+- `*` `.` - the most safe
+- `(` `)` `~` `!` `'` - also safe *(only escaped by `escape`)*
+- `@` `/` - semi safe *(escaped by `encodeUriComponent`, but not `escape`)*
+- `$` `:` `,` `&` `=` `;` - semi safe *(escaped by both `encodeURIComponent` and `escape`)*
+- `"` - not safe *(escaped by `JSON.stringify`)*
+
+Now let's assign the symbols.  To avoid needing a seperate seperator and decimal token, we change decimal to be decimal first (containing the exponent) followed by normal integer encoding (containing the base).
+
+- Reference - `*`
+- Base64 String - `.`
+- UTF8 String - `~`
+- Map - `{` and `}` *(or `(` and `)` in URL-Safe mode)*
+- List - `[` and `]` *(or `(!` and `)` in URL-Safe mode)*
+
+Hmm, the only safe symbol we have lft is `'` and even that isn't perfectly safe since it prevents from embedding in single quote strings without escaping. But we have 6 tags left to assign.
+
+Let's chose from the semi-safe set and not worry about URL-Safe for now...
+
+- Integer - `'`
+- Decimal - `:` and `'` *(not URL-Safe, but fairly rare)*
+- True - `!`
+- False - `F!`
+- Null - `N!`
+- External Dictionary - `@` *(not URL-Safe, but very rare)*
+
+The decimal number `0.1` would encode as `DECIMAL(base=1,exp=-1)` which with zigzag encoding is `1:2'`. That kinda looks like a measurement so it's not too crazy.
+
+We could technically use any of the remaining symbols for true/false/null, but I think they are rare enough that using the URL-Safe variant all the time would be preferred to save them for other uses where they make more sense.
+
+We have other arbitrary syntax unrelated to a single compact value
+
+- Line Comment - `//`
+- Inline Comment `/*` and `*/`
+- Multivalue seperator `;`
+
+Then there are possible future types
+
+- Bytes - `=`
+- Tag Ref - `&` (not pointing into named dictionary or inline values)
+- Fixed decimal (aka cents) - `$`

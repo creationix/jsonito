@@ -28,8 +28,8 @@ map = "{", { value, value }, "}";
 (* Zero ot more values, similar to JSON array *)
 list = "[", { value }, "]";
 
-(* inline string such as `key:` *)
-b64_string = ":";
+(* inline string such as `key.` *)
+b64_string = ".";
 (* length prefixed string such as `5$Hello` *)
 string = "$", { utf8_char };
 
