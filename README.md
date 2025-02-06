@@ -6,6 +6,75 @@ JSONito (or **Jito** for short) is a close relative of the JSON serialization fo
 
 Additionally, the character set has been chosen with care to embed seamlessly inside JSON strings, URL query strings, HTTP headers, or anywhere you might want to tuck away a little piece of configuration as text.
 
+## Usage
+
+If you want to jump right on in and use this as a JSON replacement, this module exports `stringify` and `parse` functions.
+
+```ts
+import * as JSONito from "jsonito"
+
+const doc = {
+  name: "JSONito",
+  nickname: "Little Jito",
+  new: true,
+  magic: 42,
+  colors: [..."🟥🟧🟨🟩🟦🟪"],
+}
+
+const jito: string = JSONito.stringify(doc)
+
+const decoded: unknown = JSONito.parse(jito)
+```
+
+The value is printed with no spaces by default for compactness:
+
+```jito
+{name'JSONito'nickname'b~Little Jitonew'!magic'1k.colors'[4~🟥4~🟧4~🟨4~🟩4~🟦4~🟪]}
+```
+
+But coming soon is an option to pretty-print as well
+
+```jito
+{
+  name' JSONito'
+  nickname' b~Little Jito
+  new' ! 
+  magic' 1k.
+  colors' [
+    4~🟥 4~🟧 4~🟨 4~🟩 4~🟦 4~🟪
+  ]
+}
+```
+
+## Gallery of Samples
+
+|                                       JS |                                JSON | JSONito                   | Comment             |
+| ---------------------------------------: | ----------------------------------: | :------------------------ | ------------------- |
+|                                      `0` |                                 `0` | `.`                       | Integers            |
+|                                     `-1` |                                `-1` | `1.`                      |                     |
+|                                      `1` |                                 `1` | `2.`                      |                     |
+|                                    `-25` |                               `-25` | `N.`                      |                     |
+|                                   `2000` |                              `2000` | `-w.`                     |                     |
+|                                `-125000` |                           `-125000` | `Z2f.`                    |                     |
+|                                `8654321` |                           `8654321` | `121Ly.`                  |                     |
+|                                  `20.24` |                             `20.24` | `3:_g.`                   | Decimal             |
+|                                  `1e100` |                             `1e100` | `38:2.`                   |                     |
+|                                `-1e-200` |                           `-1e-200` | `6f:1.`                   |                     |
+|                                `Math.PI` |                 `3.141592653589793` | `t:mkEokiJF2.`            |                     |
+|                           `Math.sqrt(3)` |                `1.7320508075688772` | `v:1X4t8mn8q8.`           |                     |
+|                                   `true` |                              `true` | `!`                       | True                |
+|                                  `false` |                             `false` | `F!`                      | False               |
+|                                   `null` |                              `null` | `N!`                      | Null                |
+|                                     `''` |                                `""` | `~`                       | Empty String        |
+|                               `'Banana'` |                          `"Banana"` | `Banana'`                 | B64 String          |
+|                            `'Hi, World'` |                       `"Hi, World"` | `9~Hi, World`             | String              |
+|                                    `'🍌'` |                               `"🍌"` | `4~🍌`                     | UTF-8 String        |
+|                           `[ 1, 2, 3 ] ` |                          `[1,2,3] ` | `[2.4.6.]`                | Lists               |
+|                      `[ 100, 100, 100 ]` |                     `[100,100,100]` | `38.[***]`                | Lists with Pointers |
+|                   `{ a: 1, b: 2, c: 3 }` |               `{"a":1,"b":2,"c":3}` | `{a'2.b'4.c'6.}`          | Maps                |
+| `[ { name: 'Alice' }, { name: 'Bob' } ]` | `[{"name":"Alice"},{"name":"Bob"}]` | `name'[{*Alice'}{*Bob'}]` | Repeated Keys       |
+|                 `new Map([[1,2],[3,4]])` |                                 N/A | `{2.4.6.8.}`              | Non-string Keys     |
+
 ## The Syntax
 
 At its core, Jito's syntax revolves around the `value`. This can encode the same data types as JSON: `string`, `number`, `boolean`, `null`, `map`, and `list`.

@@ -30,7 +30,8 @@
         "all": true
       },
       "complexity": {
-        "all": true
+        "all": true,
+        "noExcessiveCognitiveComplexity": "off"
       },
       "a11y": {
         "all": true

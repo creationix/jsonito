@@ -355,7 +355,6 @@ function toNumberMaybe(num: bigint) {
   return Number(num)
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: It's fine
 export function skipWhitespace(str: string, offset: number): number {
   const len = str.length
   let o = offset

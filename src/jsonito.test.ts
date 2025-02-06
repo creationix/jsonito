@@ -721,12 +721,11 @@ test("encode README tables", () => {
     ["'Banana'", "B64 String"],
     ["'Hi, World'", "String"],
     ["'🍌'", "UTF-8 String"],
-    ["[ 1, 2, 3] ", "Lists"],
+    ["[ 1, 2, 3 ] ", "Lists"],
     ["[ 100, 100, 100 ]", "Lists with Pointers"],
     ["{ a: 1, b: 2, c: 3 }", "Maps"],
     ["[ { name: 'Alice' }, { name: 'Bob' } ]", "Repeated Keys"],
     ["new Map([[1,2],[3,4]])", "Non-string Keys"],
-    ["new Uint8Array([213,231,187])", "Bytes"],
   ]
   const table: string[] = []
   const opts: EncodeOptions = {}
