@@ -177,10 +177,8 @@ export function writeDuplicates(rootVal: unknown, parts: string[], known: Known,
   const seen = new Map<unknown, number>()
   walk(rootVal, seen)
 
-  const repeats = seen
-    .entries()
-    // Filter to only repeated values
-    .filter(removeSingletons)
+  // Filter to only repeated values
+  const repeats = [...seen.entries()].filter(removeSingletons)
 
   // Sort by frequency descending and then by JSONito length ascending
   const sorted = [...repeats].sort(repeatOrder)
