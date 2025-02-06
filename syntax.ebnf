@@ -1,9 +1,23 @@
+root = value;
 
-document = value ;
+(*
+  A single document can have zero or more inline shared values 
+  or dictionary IDs followed by the root value.
+*)
+document = { value | dictionary }, value;
 
-file = { ( comment | value ) };
+dictionary = varint, "@";
 
-comment = "//", { utf8_char }, "\n";
+
+
+(* 
+  Comments are considered whitespace 
+  and can be inserted anywhere whitespace is allowed.
+*)
+comment = line_comment | block_comment ;
+line_comment = "//", { ? UTF-8 Character Except Newline ? }, "\n";
+block_comment = "/*", { ? UTF-8 Character ? }, "*/";
+
 
 (*
   A value is a scalar, map, list, or scope.
@@ -11,15 +25,15 @@ comment = "//", { utf8_char }, "\n";
   A map is a key/value pair.
   A list is a sequence of values.
   A scope is a set of definitions for references.
-
+*)
 value
   = varint, 
-    ( b64_string | string
-    | integer | decimal
+    ( string
+    | number
     | reference
+    | simple
     )
-  | map | list | scope
-  | true | false | null
+  | map | list
   ;
 
 (* Zero or more key/value pairs, similar to JSON object *)
@@ -29,32 +43,19 @@ map = "{", { value, value }, "}";
 list = "[", { value }, "]";
 
 (* inline string such as `key.` *)
-b64_string = ".";
 (* length prefixed string such as `5$Hello` *)
-string = "$", { utf8_char };
+string = "'" | "~", { ? UTF-8 Character ? } ;
 
 
 (* integers are encoded as zigzag(N) *)
-integer = "+";
 (* power of 10 encoded using zigzag(exponent) *)
-decimal = "|", varint, ".";
+number = { ":", varint }, ".";
 
-true = "!";
-false = "~";
-null = "?";
+(* true = `!` false = `F!` null = `N!` *)
+simple = "!";
 
-(* Scope injects definitions for references into a value *)
-scope = "(", 
-  ( inline_dictionary
-  | external_dictionary
-  ), value,")";
-
-(* Inline values that appear more than once in a document *)
-inline_dictionary = { value };
-(* Reference to external document as integer defined by the encoder *)
-external_dictionary = varint, "#";
 (* Integer index into current scope *)
-reference = "&";
+reference = "*";
 
 (*
   An unsigned integer as zero or more digits.
@@ -71,13 +72,13 @@ reference = "&";
   63 -> "_"
   64 => "10"
 *)
-varint = { digit };
+varint = { b64 };
 
 (*
   This is the same digits as url-safe base64, but used as normal integer digits.
   Note that the order is slightly different to be an extension of typical hexadecimal.
 *)
-digit
+b64
   = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7"
   | "8" | "9" | "a" | "b" | "c" | "d" | "e" | "f"
   | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n"
@@ -87,11 +88,3 @@ digit
   | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T"
   | "U" | "V" | "W" | "X" | "Y" | "Z" | "-" | "_"
   ;
-
-(* Top-level indexing with byte offsets and name for random access of archive file *)
-archive = 
-    {   "JITO\n",
-        varint, "\n",
-        varint, (b64_string | string), "\n",
-        value, "\n" 
-    };
