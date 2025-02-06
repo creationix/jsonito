@@ -10,19 +10,52 @@ Additionally, the character set has been chosen with care to embed seamlessly in
 
 ## Installation
 
+This is published to npm as both an ESM and a CJS module, so you can use it with either.
+
 ```sh
 npm i --save jsonito
 ```
 
-Or just copy the code to your project.  It's a single typescript file with no dependencies.
+You can require it from a node CJS script.
+
+```js
+const JSONito = require('jsonito')
+// or
+const { stringify, parse } = require('jsonito')
+```
+
+You can import it from a node ESM.
+
+```js
+import * as JSONito from 'jsonito'
+// or
+import { stringify, parse } from 'jsonito'
+```
+
+Or just copy the [JS file](dist/jsonito.js) to your website and import it using browser native imports.
+
+```html
+<script type="module">
+  import * as JSONito from './deps/jsonito.js'
+  // or
+  import { stringify, parse } from './deps/jsonito.js'
+  ...
+</script>
+```
+
+Or copy the [typescript source](src/jsonito.ts) into your typescript project and import
+
+```ts
+import * as JSONito from './deps/jsonito.ts'
+// or
+import { stringify, parse } from './deps/jsonito.ts'
+```
 
 ## Usage
 
 If you want to jump right on in and use this as a JSON replacement, this module exports `stringify` and `parse` functions.
 
 ```ts
-import * as JSONito from "jsonito"
-
 const doc = {
   name: "JSONito",
   nickname: "Little Jito",
