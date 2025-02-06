@@ -3,7 +3,10 @@ import { parse, stringify } from "./jsonito.ts"
 
 test("benchmark pokemon", async () => {
   const pokemon: unknown[] = []
-  for (let i = 1; i <= 10; i++) {
+  const num = 4
+  const start = Math.floor(Math.random() * 100 - num)
+  const end = start + num
+  for (let i = start; i <= end; i++) {
     const url = `https://pokeapi.co/api/v2/pokemon/${i}/`
     console.log("Ingesting", url)
     const res = await fetch(url)
