@@ -26,7 +26,8 @@
     "build": "npm run build:clean && npm run build:cjs && npm run build:esm && npm run build:tidy",
     "format": "biome format --fix src && biome lint --fix src",
     "lint": "biome lint src",
-    "test": "bun test"
+    "test": "bun test",
+    "prepublish": "npm run format && npm run lint && npm run build"
   },
   "author": "Tim Caswell <tim@creationix.com>",
   "license": "MIT",

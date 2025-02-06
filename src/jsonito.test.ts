@@ -10,7 +10,7 @@ import {
   skipB64,
   parseB64,
   parse,
-  EncodeOptions,
+  type EncodeOptions,
 } from "./jsonito.ts"
 
 test("splitDecimal", () => {

@@ -43,15 +43,15 @@ function stringify(rootValue, options = {}) {
   return parts.join("")
 }
 function writeKey(key, parts, known) {
-  if (known.has(key)) {
-    const index = known.get(key)
+  const index = known.get(key)
+  if (index !== undefined) {
     return parts.push(encodeB64(BigInt(index)), "*")
   }
   return writeString(key, parts)
 }
 function writeAny(val, parts, known) {
-  if (known.has(val)) {
-    const index = known.get(val)
+  const index = known.get(val)
+  if (index !== undefined) {
     return parts.push(encodeB64(BigInt(index)), "*")
   }
   if (val === null) {
@@ -364,8 +364,11 @@ const fromB64 = new Map([...BASE64].map((c, i) => [c, i]))
 function parseB64(jito, start, end) {
   let num = 0n
   for (let i = start; i < end; i++) {
-    const digit = BigInt(fromB64.get(jito[i]))
-    num = num * 64n + digit
+    const digit = fromB64.get(jito[i])
+    if (digit === undefined) {
+      throw new Error(`Invalid base64 digit: ${jito[i]}`)
+    }
+    num = num * 64n + BigInt(digit)
   }
   return num
 }
