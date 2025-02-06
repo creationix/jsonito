@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2025 Tim Caswell <tim@creationix.com>
+
 export interface EncodeOptions {
   // Do a scan on the value and inject an outer scope to factor our common values.
   findDuplicates?: boolean
