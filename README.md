@@ -1,10 +1,11 @@
 # JSONito
 
+<img align="right" style="height:14em" src="img/jito-mascot.webp" alt="Little Jito Mascot"/>
+
 *El sobrinito de JSON*
 
 [![Bun Tests](https://github.com/creationix/jsonito/actions/workflows/test.yaml/badge.svg?event=push)](https://github.com/creationix/jsonito/actions/workflows/test.yaml)
 
-<img align="right" style="margin-top:-5em;height:14em" src="img/jito-mascot.webp" alt="Little Jito Mascot"/>
 
 JSONito (or **Jito** for short) is a close relative of the JSON serialization format — think of it as JSON’s little nephew. While JSON was optimized as a subset of JavaScript, striking a balance between machine-readability and human-friendliness, Jito tips the scales a bit more toward the machine. The result? Documents that are typically **50% smaller**!
 
