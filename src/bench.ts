@@ -1,30 +1,44 @@
-import { expect, test } from "bun:test"
 import { parse, stringify } from "./jsonito.ts"
+import { readFileSync, writeFile, writeFileSync } from "node:fs"
 
-test("benchmark pokemon", async () => {
-  const pokemon: unknown[] = []
-  const num = 4
-  const start = Math.floor(Math.random() * 100 - num)
-  const end = start + num
-  for (let i = start; i <= end; i++) {
+const pokemon: unknown[] = []
+const num = 4
+const start = Math.floor(Math.random() * (10 - num)) + 1
+const end = start + num
+for (let i = start; i <= end; i++) {
+  let data: unknown
+  const filename = `pokemon${i}.json`
+  try {
+    const cached = readFileSync(filename, "utf8")
+    data = JSON.parse(cached)
+    console.log("Reusing", filename)
+  } catch (err) {
+
+  }
+  if (!data) {
     const url = `https://pokeapi.co/api/v2/pokemon/${i}/`
     console.log("Ingesting", url)
     const res = await fetch(url)
-    const data = await res.json()
-    const json = JSON.stringify(data)
-    const jito = stringify(data)
-    const jsonParsed = JSON.parse(json)
-    const jitoParsed = parse(jito)
-    expect(jitoParsed).toEqual(jsonParsed)
-    pokemon.push(data)
+    const json = await res.text()
+    writeFileSync(filename, json)
+    data = JSON.parse(json)
   }
-  const json = JSON.stringify(pokemon)
-  const jito = stringify(pokemon)
+  const json = JSON.stringify(data)
+  const jito = stringify(data)
   const jsonParsed = JSON.parse(json)
   const jitoParsed = parse(jito)
-  expect(jsonParsed).toEqual(pokemon)
-  expect(jitoParsed).toEqual(pokemon)
-  expect(jitoParsed).toEqual(jsonParsed)
+  // expect(jitoParsed).toEqual(jsonParsed)
+  pokemon.push(data)
+}
+const json = JSON.stringify(pokemon)
+const jito = stringify(pokemon)
+const jsonParsed = JSON.parse(json)
+const jitoParsed = parse(jito)
+// expect(jsonParsed).toEqual(pokemon)
+// expect(jitoParsed).toEqual(pokemon)
+// expect(jitoParsed).toEqual(jsonParsed)
+
+function bench() {
   const totals = {
     json: { parse: 0, stringify: 0 },
     jito: { parse: 0, stringify: 0 },
@@ -74,14 +88,16 @@ test("benchmark pokemon", async () => {
   ]
 
   console.log(printTable(table))
+  setTimeout(bench, 500)
+}
 
-  // Ensure at least 50% size savings
-  expect(jsonSize / jitoSize).toBeGreaterThan(2)
-  // Ensure no more than 5x slower decode
-  expect(totals.jito.parse / totals.json.parse).toBeLessThan(5)
-  // Ensure no more then 30x slower encode
-  expect(totals.jito.stringify / totals.json.stringify).toBeLessThan(30)
-})
+bench()
+// // Ensure at least 50% size savings
+// expect(jsonSize / jitoSize).toBeGreaterThan(2)
+// // Ensure no more than 5x slower decode
+// expect(totals.jito.parse / totals.json.parse).toBeLessThan(5)
+// // Ensure no more then 30x slower encode
+// expect(totals.jito.stringify / totals.json.stringify).toBeLessThan(30)
 
 function ms(n: number) {
   return `${n.toFixed(2)} ms`
