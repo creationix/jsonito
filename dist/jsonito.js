@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Tim Caswell
+// https://github.com/creationix/jsonito
 const B64_STR = /^([1-9a-zA-Z_-][0-9a-zA-Z_-]{0,7})$/
 // Encode any arbitrary value as JSONito
 export function stringify(rootValue, options = {}) {
@@ -107,8 +108,7 @@ function writeString(str, parts) {
   if (B64_STR.test(str)) {
     return parts.push(str, "'")
   }
-  const len = new TextEncoder().encode(str).length
-  return parts.push(encodeB64(BigInt(len)), "~", str)
+  return parts.push(encodeB64(BigInt(str.length)), "~", str)
 }
 function writeArray(arr, parts, known) {
   parts.push("[")

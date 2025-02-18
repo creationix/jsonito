@@ -128,7 +128,7 @@ You can see the latest results in every [CI commit](https://github.com/creationi
 |                                     `''` |                                `""` | `~`                       | Empty String        |
 |                               `'Banana'` |                          `"Banana"` | `Banana'`                 | B64 String          |
 |                            `'Hi, World'` |                       `"Hi, World"` | `9~Hi, World`             | String              |
-|                                    `'🍌'` |                               `"🍌"` | `4~🍌`                     | UTF-8 String        |
+|                                    `'🍌'` |                               `"🍌"` | `2~🍌`                     | UTF-8 String        |
 |                           `[ 1, 2, 3 ] ` |                          `[1,2,3] ` | `[2.4.6.]`                | Lists               |
 |                      `[ 100, 100, 100 ]` |                     `[100,100,100]` | `38.[***]`                | Lists with Pointers |
 |                   `{ a: 1, b: 2, c: 3 }` |               `{"a":1,"b":2,"c":3}` | `{a'2.b'4.c'6.}`          | Maps                |
