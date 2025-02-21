@@ -725,7 +725,7 @@ test("encode README tables", () => {
     ["''", "Empty String"],
     ["'Banana'", "B64 String"],
     ["'Hi, World'", "String"],
-    ["'🍌'", "UTF-8 String"],
+    ["'🍌'", "Unicode String"],
     ["[ 1, 2, 3 ] ", "Lists"],
     ["[ 100, 100, 100 ]", "Lists with Pointers"],
     ["{ a: 1, b: 2, c: 3 }", "Maps"],

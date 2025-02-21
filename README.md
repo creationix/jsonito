@@ -6,7 +6,6 @@
 
 [![Bun Tests](https://github.com/creationix/jsonito/actions/workflows/test.yaml/badge.svg?event=push)](https://github.com/creationix/jsonito/actions/workflows/test.yaml)
 
-
 JSONito (or **Jito** for short) is a close relative of the JSON serialization format — think of it as JSON’s little nephew. While JSON was optimized as a subset of JavaScript, striking a balance between machine-readability and human-friendliness, Jito tips the scales a bit more toward the machine. The result? Documents that are typically **50% smaller**!
 
 Additionally, the character set has been chosen with care to embed seamlessly inside JSON strings, URL query strings, HTTP headers, or anywhere you might want to tuck away a little piece of configuration as text.
@@ -128,8 +127,8 @@ You can see the latest results in every [CI commit](https://github.com/creationi
 |                                     `''` |                                `""` | `~`                       | Empty String        |
 |                               `'Banana'` |                          `"Banana"` | `Banana'`                 | B64 String          |
 |                            `'Hi, World'` |                       `"Hi, World"` | `9~Hi, World`             | String              |
-|                                    `'🍌'` |                               `"🍌"` | `2~🍌`                     | UTF-8 String        |
-|                           `[ 1, 2, 3 ] ` |                          `[1,2,3] ` | `[2.4.6.]`                | Lists               |
+|                                   `'🍌'` |                              `"🍌"` | `2~🍌`                    | Unicode String      |
+|                           `[ 1, 2, 3 ]`  |                          `[1,2,3]`  | `[2.4.6.]`                | Lists               |
 |                      `[ 100, 100, 100 ]` |                     `[100,100,100]` | `38.[***]`                | Lists with Pointers |
 |                   `{ a: 1, b: 2, c: 3 }` |               `{"a":1,"b":2,"c":3}` | `{a'2.b'4.c'6.}`          | Maps                |
 | `[ { name: 'Alice' }, { name: 'Bob' } ]` | `[{"name":"Alice"},{"name":"Bob"}]` | `name'[{*Alice'}{*Bob'}]` | Repeated Keys       |
