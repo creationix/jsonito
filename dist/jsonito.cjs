@@ -1,6 +1,7 @@
 "use strict"
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Tim Caswell
+// https://github.com/creationix/jsonito
 Object.defineProperty(exports, "__esModule", { value: true })
 exports.stringify = stringify
 exports.encodeB64 = encodeB64
@@ -119,7 +120,7 @@ function writeString(str, parts) {
   if (B64_STR.test(str)) {
     return parts.push(str, "'")
   }
-  const len = new TextEncoder().encode(str).length
+  const len = str.length
   return parts.push(encodeB64(BigInt(len)), "~", str)
 }
 function writeArray(arr, parts, known) {

@@ -273,9 +273,9 @@ test("encode strings", () => {
   expect(stringify("Hi!")).toEqual("3~Hi!")
   expect(stringify("Goodbye.")).toEqual("8~Goodbye.")
   expect(stringify("1 2 3")).toEqual("5~1 2 3")
-  expect(stringify("𐐡𐐰𐑌𐐼o")).toEqual("h~𐐡𐐰𐑌𐐼o")
-  expect(stringify("🚀🎲")).toEqual("8~🚀🎲")
-  expect(stringify("👶OM🍼")).toEqual("a~👶OM🍼")
+  expect(stringify("𐐡𐐰𐑌𐐼o")).toEqual("9~𐐡𐐰𐑌𐐼o")
+  expect(stringify("🚀🎲")).toEqual("4~🚀🎲")
+  expect(stringify("👶OM🍼")).toEqual("6~👶OM🍼")
   expect(stringify(" ".repeat(10))).toEqual(`a~${" ".repeat(10)}`)
   expect(stringify(" ".repeat(100))).toEqual(`1A~${" ".repeat(100)}`)
   expect(stringify(" ".repeat(1000))).toEqual(`fE~${" ".repeat(1000)}`)
@@ -504,6 +504,9 @@ test("decode strings", () => {
   expect(parse(`a~${" ".repeat(10)}`)).toEqual(" ".repeat(10))
   expect(parse(`1A~${" ".repeat(100)}`)).toEqual(" ".repeat(100))
   expect(parse(`fE~${" ".repeat(1000)}`)).toEqual(" ".repeat(1000))
+  // Decode tests with unicode
+  expect(parse("2~🍌")).toEqual("🍌")
+  expect(parse("9~𐐡𐐰𐑌𐐼o")).toEqual("𐐡𐐰𐑌𐐼o")
 })
 
 test("decode lists", () => {
@@ -515,6 +518,7 @@ test("decode lists", () => {
   expect(parse("[[]]")).toEqual([[]])
   expect(parse("[[[]]]")).toEqual([[[]]])
   expect(parse("[[[]][[][]][[][][]]]")).toEqual([[[]], [[], []], [[], [], []]])
+  expect(parse("[2~🍌]")).toEqual(["🍌"])
 })
 
 test("decode lists with whitespace", () => {
@@ -597,7 +601,8 @@ test("encode and decode with external dictionaries", () => {
 test("encode README values", () => {
   expect(stringify("Banana")).toEqual("Banana'")
   expect(stringify("Hi, World")).toEqual("9~Hi, World")
-  expect(stringify("🍌")).toEqual("4~🍌")
+  expect(stringify("🍌")).toEqual("2~🍌")
+  expect(stringify(["🍌"])).toEqual("[2~🍌]")
   expect(stringify([1, 2, 3])).toEqual("[2.4.6.]")
   expect(stringify([100, 100, 100])).toEqual("38.[***]")
   expect(stringify({ a: 1, b: 2, c: 3 })).toEqual("{a'2.b'4.c'6.}")
@@ -720,7 +725,7 @@ test("encode README tables", () => {
     ["''", "Empty String"],
     ["'Banana'", "B64 String"],
     ["'Hi, World'", "String"],
-    ["'🍌'", "UTF-8 String"],
+    ["'🍌'", "Unicode String"],
     ["[ 1, 2, 3 ] ", "Lists"],
     ["[ 100, 100, 100 ]", "Lists with Pointers"],
     ["{ a: 1, b: 2, c: 3 }", "Maps"],

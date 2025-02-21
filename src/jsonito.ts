@@ -135,7 +135,7 @@ function writeString(str: string, parts: string[]) {
   if (B64_STR.test(str)) {
     return parts.push(str, "'")
   }
-  const len = new TextEncoder().encode(str).length
+  const len = str.length
   return parts.push(encodeB64(BigInt(len)), "~", str)
 }
 
