@@ -30,8 +30,8 @@ test("benchmark pokemon", async () => {
     jito: { parse: 0, stringify: 0 },
   }
   console.log("Benchmarking...")
-  const COUNT = 100
-  for (let i = 0; i < COUNT; i++) {
+  const count = 100
+  for (let i = 0; i < count; i++) {
     let before = performance.now()
     JSON.parse(json)
     let after = performance.now()
@@ -60,14 +60,14 @@ test("benchmark pokemon", async () => {
     ["Metric", "JSON", "JSONito", "Relative Comparison"],
     [
       "Parse Time",
-      ms(totals.json.parse / COUNT),
-      ms(totals.jito.parse / COUNT),
+      ms(totals.json.parse / count),
+      ms(totals.jito.parse / count),
       compareMs("JSONito.parse", totals.jito.parse, totals.json.parse),
     ],
     [
       "Stringify Time",
-      ms(totals.json.stringify / COUNT),
-      ms(totals.jito.stringify / COUNT),
+      ms(totals.json.stringify / count),
+      ms(totals.jito.stringify / count),
       compareMs("JSONito.stringify", totals.jito.stringify, totals.json.stringify),
     ],
     ["Encoded Size", bytes(jsonSize), bytes(jitoSize), compareBytes("JSONito encoded", jitoSize, jsonSize)],
