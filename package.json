@@ -4,7 +4,7 @@
     "type": "git",
     "url": "https://github.com/creationix/jsonito"
   },
-  "version": "0.1.6",
+  "version": "0.2.0",
   "description": "El sobrinito de JSON",
   "type": "module",
   "main": "./dist/jsonito.cjs",
