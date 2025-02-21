@@ -54,15 +54,15 @@ export async function runBench() {
     delta = after - before
     totals.jito.parse += delta
     before = performance.now()
-    JSON.stringify(pokemon)
-    after = performance.now()
-    delta = after - before
-    totals.json.stringify += delta
-    before = performance.now()
-    stringify(pokemon)
-    after = performance.now()
-    delta = after - before
-    totals.jito.stringify += delta
+    // JSON.stringify(pokemon)
+    // after = performance.now()
+    // delta = after - before
+    // totals.json.stringify += delta
+    // before = performance.now()
+    // stringify(pokemon)
+    // after = performance.now()
+    // delta = after - before
+    // totals.jito.stringify += delta
   }
   const jsonSize = new TextEncoder().encode(json).length
   const jitoSize = new TextEncoder().encode(jito).length

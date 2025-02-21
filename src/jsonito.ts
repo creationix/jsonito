@@ -230,7 +230,15 @@ function walk(val: unknown, seen: Map<unknown, number>) {
 
 type Seen = unknown[] & { dictionaries: Record<string, unknown[]> }
 
-export function parse(jito: string, opts: DecodeOptions = {}): unknown {
+export function parse(input: string | ArrayBufferView | ArrayBuffer, opts: DecodeOptions = {}): unknown {
+  let jito: Uint8Array
+  if (typeof input === "string") {
+    jito = new TextEncoder().encode(input)
+  } else if (ArrayBuffer.isView(input)) {
+    jito = new Uint8Array(input.buffer, input.byteOffset, input.byteLength)
+  } else {
+    jito = new Uint8Array(input)
+  }
   const seen: Seen = [] as unknown as Seen
   seen.dictionaries = opts.dictionaries || {}
   const len = jito.length
@@ -372,29 +380,30 @@ function toNumberMaybe(num: bigint) {
   return Number(num)
 }
 
-export function skipWhitespace(str: string, offset: number): number {
-  const len = str.length
+export function skipWhitespace(buf: Uint8Array, offset: number): number {
+  const len = buf.length
   let o = offset
   while (o < len) {
-    const char = str[o]
+    const char = buf[o]
     // Skip whitespace
-    if (char === " " || char === "\t" || char === "\n" || char === "\r") {
+    // "\t" or "\n" or "\r" or " "
+    if (char === 0x09 || char === 0x0a || char === 0x0d || char === 0x20) {
       o++
       continue
     }
     // Skip C style comments
-    if (char === "/") {
-      if (str[o + 1] === "/") {
+    if (char === 0x2f) {
+      if (buf[o + 1] === 0x2f) {
         o += 2
-        while (o < len && str[o] !== "\n") {
+        while (o < len && buf[o] !== 0x0a) {
           o++
         }
         o++
         continue
       }
-      if (str[o + 1] === "*") {
+      if (buf[o + 1] === 0x2a) {
         o += 2
-        while (o < len && str[o] !== "*" && str[o + 1] !== "/") {
+        while (o < len && buf[o] !== 0x2a && buf[o + 1] !== 0x2f) {
           o++
         }
         o += 2
@@ -411,8 +420,10 @@ const inB64 = new Set(BASE64)
 export function skipB64(str: string, offset: number): number {
   const len = str.length
   let o = offset
-  while (o < len && inB64.has(str[o])) {
-    o++
+  while (o < len) {
+    const c = str.charCodeAt(o)
+    if (c < 0x2d || c > 0x2d && c < 0x30 || )
+      o++
   }
   return o
 }
