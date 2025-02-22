@@ -231,106 +231,119 @@ export function parse(jito: string, opts: DecodeOptions = {}): unknown {
   const len = jito.length
   let offset = skipWhitespace(jito, 0)
   while (offset < len) {
-    const { value, offset: newOffset } = parseAny(jito, offset, seen)
-    offset = skipWhitespace(jito, newOffset)
+    const value = parseAny()
+    offset = skipWhitespace(jito, offset)
     seen.push(value)
   }
   return seen.pop()
-}
 
-function parseList(jito: string, offset: number, seen: Seen): { value: unknown[]; offset: number } {
-  const list: unknown[] = []
-  const len = jito.length
-  let o = skipWhitespace(jito, offset)
-  while (o < len) {
-    if (jito[o] === "]") {
-      return { value: list, offset: o + 1 }
+  function parseList(): unknown[] {
+    const list: unknown[] = []
+    const len = jito.length
+    offset = skipWhitespace(jito, offset)
+    while (offset < len) {
+      if (jito[offset] === "]") {
+        offset++
+        return list
+      }
+      const value = parseAny()
+      list.push(value)
+      offset = skipWhitespace(jito, offset)
     }
-    const { value, offset: newOffset } = parseAny(jito, o, seen)
-    list.push(value)
-    o = skipWhitespace(jito, newOffset)
-  }
-  throw jitoSyntaxError(jito, o)
-}
-
-function parseObject(jito: string, offset: number, seen: Seen): { value: Record<string, unknown>; offset: number } {
-  const entries: [unknown, unknown][] = []
-  let allStringKeys = true
-  const len = jito.length
-  let o = skipWhitespace(jito, offset)
-  while (o < len) {
-    if (jito[o] === "}") {
-      return { value: allStringKeys ? Object.fromEntries(entries) : new Map(entries), offset: o + 1 }
-    }
-    const { value: key, offset: o2 } = parseAny(jito, o, seen)
-    if (typeof key !== "string") {
-      allStringKeys = false
-    }
-    const { value, offset: o3 } = parseAny(jito, skipWhitespace(jito, o2), seen)
-    entries.push([key, value])
-    o = skipWhitespace(jito, o3)
-  }
-  throw jitoSyntaxError(jito, o)
-}
-
-export function parseAny(jito: string, offset: number, seen: Seen): { value: unknown; offset: number } {
-  const start = skipWhitespace(jito, offset)
-  let tag = jito[start]
-  if (tag === "[") {
-    return parseList(jito, start + 1, seen)
-  }
-  if (tag === "{") {
-    return parseObject(jito, start + 1, seen)
-  }
-  const end = skipB36(jito, start)
-  tag = jito[end]
-  if (tag === "'") {
-    return { value: jito.slice(start, end), offset: end + 1 }
-  }
-  if (tag === "@") {
-    const dictionaryName = jito.slice(start, end)
-    const dict = seen.dictionaries[dictionaryName]
-    if (!dict) {
-      throw new Error(`Unknown dictionary: ${dictionaryName}`)
-    }
-    for (const value of dict) {
-      seen.push(value)
-    }
-    return parseAny(jito, end + 1, seen)
+    throw jitoSyntaxError(jito, offset)
   }
 
-  if (tag === ".") {
-    return { value: toNumberMaybe(zigzagDecode(parseBigB36(jito, start, end))), offset: end + 1 }
-  }
-  if (tag === "~") {
-    const len = parseB36(jito, start, end)
-    return { value: jito.slice(end + 1, end + 1 + len), offset: end + 1 + len }
-  }
-  if (tag === ":") {
-    const end2 = skipB36(jito, end + 1)
-    if (jito[end2] === ".") {
-      const exp = zigzagDecode(parseBigB36(jito, start, end))
-      const base = zigzagDecode(parseBigB36(jito, end + 1, end2))
-      return { value: Number.parseFloat(`${base}e${exp}`), offset: end2 + 1 }
+  function parseObject(): Record<string, unknown> {
+    const entries: [unknown, unknown][] = []
+    let allStringKeys = true
+    const len = jito.length
+    offset = skipWhitespace(jito, offset)
+    while (offset < len) {
+      if (jito[offset] === "}") {
+        offset++
+        return allStringKeys ? Object.fromEntries(entries) : new Map(entries)
+      }
+      const key = parseAny()
+      if (typeof key !== "string") {
+        allStringKeys = false
+      }
+      offset = skipWhitespace(jito, offset)
+      const value = parseAny()
+      entries.push([key, value])
+      offset = skipWhitespace(jito, offset)
     }
-  }
-  if (tag === "T") {
-    return { value: true, offset: end + 1 }
-  }
-  if (tag === "F") {
-    return { value: false, offset: end + 1 }
-  }
-  if (tag === "N") {
-    return { value: null, offset: end + 1 }
-  }
-  if (tag === "*") {
-    const value = seen[parseB36(jito, start, end)]
-    if (value !== undefined) {
-      return { value, offset: end + 1 }
-    }
+    throw jitoSyntaxError(jito, offset)
   }
 
-  throw jitoSyntaxError(jito, offset)
+  function parseAny(): unknown {
+    offset = skipWhitespace(jito, offset)
+    let tag = jito[offset]
+    if (tag === "[") {
+      offset++
+      return parseList()
+    }
+    if (tag === "{") {
+      offset++
+      return parseObject()
+    }
+    let start = offset
+    offset = skipB36(jito, offset)
+    tag = jito[offset]
+    if (tag === "'") {
+      return jito.slice(start, offset++)
+    }
+    if (tag === "@") {
+      const dictionaryName = jito.slice(start, offset++)
+      const dict = seen.dictionaries[dictionaryName]
+      if (!dict) {
+        throw new Error(`Unknown dictionary: ${dictionaryName}`)
+      }
+      for (const value of dict) {
+        seen.push(value)
+      }
+      return parseAny()
+    }
+
+    if (tag === ".") {
+      const b36 = parseBigB36(jito, start, offset++)
+      return toNumberMaybe(zigzagDecode(b36))
+    }
+    if (tag === "~") {
+      const len = parseB36(jito, start, offset++)
+      start = offset
+      offset += len
+      return jito.slice(start, offset)
+    }
+    if (tag === ":") {
+      const exp = zigzagDecode(parseBigB36(jito, start, offset++))
+      start = offset
+      offset = skipB36(jito, offset)
+      if (jito[offset] === ".") {
+        const base = zigzagDecode(parseBigB36(jito, start, offset++))
+        return Number.parseFloat(`${base}e${exp}`)
+      }
+    }
+    if (tag === "T") {
+      offset++
+      return true
+    }
+    if (tag === "F") {
+      offset++
+      return false
+    }
+    if (tag === "N") {
+      offset++
+      return null
+    }
+    if (tag === "*") {
+      const index = parseB36(jito, start, offset++)
+      if (index in seen) {
+        return seen[index]
+      }
+    }
+
+    throw jitoSyntaxError(jito, offset)
+  }
 }
 
 function jitoSyntaxError(jito: string, offset: number) {
