@@ -14,7 +14,7 @@ export interface DecodeOptions {
   dictionaries?: Record<string, unknown[]>
 }
 
-const B64_STR = /^([1-9a-zA-Z_-][0-9a-zA-Z_-]{0,7})$/
+const B36_STR = /^([1-9a-z][0-9a-z]{0,10})$/
 
 type Known = Map<unknown, number>
 
@@ -35,7 +35,7 @@ export function stringify(rootValue: unknown, options: EncodeOptions = {}): stri
   }
   if (options.dictionaries) {
     for (const [key, values] of Object.entries(options.dictionaries)) {
-      if (!B64_STR.test(key)) {
+      if (!B36_STR.test(key)) {
         throw new Error(`Invalid dictionary key: ${key}`)
       }
       parts.push(key, "@")
@@ -52,7 +52,7 @@ export function stringify(rootValue: unknown, options: EncodeOptions = {}): stri
 function writeKey(key: string, parts: string[], known: Known) {
   const index = known.get(key)
   if (index !== undefined) {
-    return parts.push(encodeB64(BigInt(index)), "*")
+    return parts.push(encodeB36(index), "*")
   }
   return writeString(key, parts)
 }
@@ -60,13 +60,13 @@ function writeKey(key: string, parts: string[], known: Known) {
 function writeAny(val: unknown, parts: string[], known: Known) {
   const index = known.get(val)
   if (index !== undefined) {
-    return parts.push(encodeB64(BigInt(index)), "*")
+    return parts.push(encodeB36(index), "*")
   }
   if (val === null) {
-    return parts.push("N!")
+    return parts.push("N")
   }
   if (typeof val === "boolean") {
-    return parts.push(val ? "!" : "F!")
+    return parts.push(val ? "T" : "F")
   }
   if (typeof val === "number") {
     return writeNumber(val, parts)
@@ -89,21 +89,16 @@ function writeAny(val: unknown, parts: string[], known: Known) {
   throw new Error(`TODO: implement writeAny for ${typeof val}`)
 }
 
-const BASE64 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_"
-
-export function encodeB64(num: bigint) {
-  const digits: string[] = []
-  let n = num
-  while (n > 0n) {
-    const digit = Number(n % 64n)
-    n /= 64n
-    digits.push(BASE64[digit])
-  }
-  return digits.reverse().join("")
+export function encodeB36(num: number) {
+  return num === 0 ? "" : num.toString(36)
 }
 
-export function encodeSignedB64(num: bigint) {
-  return encodeB64(num < 0n ? -num * 2n - 1n : num * 2n)
+export function encodeBigB36(num: bigint) {
+  return num === 0n ? "" : num.toString(36)
+}
+
+export function encodeSignedBigB36(num: bigint) {
+  return encodeBigB36(num < 0n ? -num * 2n - 1n : num * 2n)
 }
 
 function writeNumber(num: number, parts: string[]) {
@@ -111,11 +106,11 @@ function writeNumber(num: number, parts: string[]) {
   if (exp >= 0 && exp <= 4) {
     return writeInteger(BigInt(num), parts)
   }
-  return parts.push(encodeSignedB64(BigInt(exp)), ":", encodeSignedB64(BigInt(base)), ".")
+  return parts.push(encodeSignedBigB36(BigInt(exp)), ":", encodeSignedBigB36(BigInt(base)), ".")
 }
 
 function writeInteger(num: bigint, parts: string[]) {
-  return parts.push(encodeSignedB64(num), ".")
+  return parts.push(encodeSignedBigB36(num), ".")
 }
 
 const DEC_PARTS = /^(-?\d+)(?:\.(\d+))?e[+]?([-]?\d+)$/
@@ -132,10 +127,10 @@ export function splitDecimal(num: number) {
 }
 
 function writeString(str: string, parts: string[]) {
-  if (B64_STR.test(str)) {
+  if (B36_STR.test(str)) {
     return parts.push(str, "'")
   }
-  return parts.push(encodeB64(BigInt(str.length)), "~", str)
+  return parts.push(encodeB36(str.length), "~", str)
 }
 
 function writeArray(arr: unknown[], parts: string[], known: Known) {
@@ -194,7 +189,7 @@ export function writeDuplicates(rootVal: unknown, parts: string[], known: Known,
     const enc = subParts.join("")
     subParts.length = 0
     // Filter out any values that are cheaper to encode directly
-    const refCost = encodeB64(BigInt(known.size)).length + 1
+    const refCost = encodeB36(known.size).length + 1
     const encodedCost = enc.length
     if (encodedCost <= refCost) {
       continue
@@ -235,117 +230,133 @@ export function parse(jito: string, opts: DecodeOptions = {}): unknown {
   const len = jito.length
   let offset = skipWhitespace(jito, 0)
   while (offset < len) {
-    const { value, offset: newOffset } = parseAny(jito, offset, seen)
-    offset = skipWhitespace(jito, newOffset)
+    const value = parseAny()
+    offset = skipWhitespace(jito, offset)
     seen.push(value)
   }
   return seen.pop()
-}
 
-function parseList(jito: string, offset: number, seen: Seen): { value: unknown[]; offset: number } {
-  const list: unknown[] = []
-  const len = jito.length
-  let o = skipWhitespace(jito, offset)
-  while (o < len) {
-    if (jito[o] === "]") {
-      return { value: list, offset: o + 1 }
+  function parseList(): unknown[] {
+    const list: unknown[] = []
+    const len = jito.length
+    offset = skipWhitespace(jito, offset)
+    while (offset < len) {
+      if (jito[offset] === "]") {
+        offset++
+        return list
+      }
+      const value = parseAny()
+      list.push(value)
+      offset = skipWhitespace(jito, offset)
     }
-    const { value, offset: newOffset } = parseAny(jito, o, seen)
-    list.push(value)
-    o = skipWhitespace(jito, newOffset)
-  }
-  throw jitoSyntaxError(jito, o)
-}
-
-function parseObject(jito: string, offset: number, seen: Seen): { value: Record<string, unknown>; offset: number } {
-  const entries: [unknown, unknown][] = []
-  let allStringKeys = true
-  const len = jito.length
-  let o = skipWhitespace(jito, offset)
-  while (o < len) {
-    if (jito[o] === "}") {
-      return { value: allStringKeys ? Object.fromEntries(entries) : new Map(entries), offset: o + 1 }
-    }
-    const { value: key, offset: o2 } = parseAny(jito, o, seen)
-    if (typeof key !== "string") {
-      allStringKeys = false
-    }
-    const { value, offset: o3 } = parseAny(jito, skipWhitespace(jito, o2), seen)
-    entries.push([key, value])
-    o = skipWhitespace(jito, o3)
-  }
-  throw jitoSyntaxError(jito, o)
-}
-
-export function parseAny(jito: string, offset: number, seen: Seen): { value: unknown; offset: number } {
-  const start = skipWhitespace(jito, offset)
-  let tag = jito[start]
-  if (tag === "[") {
-    return parseList(jito, start + 1, seen)
-  }
-  if (tag === "{") {
-    return parseObject(jito, start + 1, seen)
-  }
-  const end = skipB64(jito, start)
-  tag = jito[end]
-  if (tag === "'") {
-    return { value: jito.slice(start, end), offset: end + 1 }
-  }
-  if (tag === "@") {
-    const dictionaryName = jito.slice(start, end)
-    const dict = seen.dictionaries[dictionaryName]
-    if (!dict) {
-      throw new Error(`Unknown dictionary: ${dictionaryName}`)
-    }
-    for (const value of dict) {
-      seen.push(value)
-    }
-    return parseAny(jito, end + 1, seen)
+    throw jitoSyntaxError(jito, offset)
   }
 
-  const b64 = parseB64(jito, start, end)
-  if (tag === ".") {
-    return { value: toNumberMaybe(zigzagDecode(b64)), offset: end + 1 }
-  }
-  if (tag === "~") {
-    const len = Number(b64)
-    return { value: jito.slice(end + 1, end + 1 + len), offset: end + 1 + len }
-  }
-  if (tag === ":") {
-    const end2 = skipB64(jito, end + 1)
-    if (jito[end2] === ".") {
-      const exp = zigzagDecode(b64)
-      const base = zigzagDecode(parseB64(jito, end + 1, end2))
-      return { value: Number.parseFloat(`${base}e${exp}`), offset: end2 + 1 }
+  function parseObject(): Record<string, unknown> {
+    const entries: [unknown, unknown][] = []
+    let allStringKeys = true
+    const len = jito.length
+    offset = skipWhitespace(jito, offset)
+    while (offset < len) {
+      if (jito[offset] === "}") {
+        offset++
+        return allStringKeys ? Object.fromEntries(entries) : new Map(entries)
+      }
+      const key = parseAny()
+      if (typeof key !== "string") {
+        allStringKeys = false
+      }
+      offset = skipWhitespace(jito, offset)
+      const value = parseAny()
+      entries.push([key, value])
+      offset = skipWhitespace(jito, offset)
     }
-  }
-  if (tag === "!") {
-    if (b64 === 0n) {
-      return { value: true, offset: end + 1 }
-    }
-    if (b64 === 41n) {
-      return { value: false, offset: end + 1 }
-    }
-    if (b64 === 49n) {
-      return { value: null, offset: end + 1 }
-    }
-  }
-  if (tag === "*") {
-    const value = seen[Number(b64)]
-    if (value !== undefined) {
-      return { value, offset: end + 1 }
-    }
+    throw jitoSyntaxError(jito, offset)
   }
 
-  throw jitoSyntaxError(jito, offset)
+  function parseAny(): unknown {
+    offset = skipWhitespace(jito, offset)
+    let tag = jito[offset]
+    if (tag === "[") {
+      offset++
+      return parseList()
+    }
+    if (tag === "{") {
+      offset++
+      return parseObject()
+    }
+    let start = offset
+    offset = skipB36(jito, offset)
+    tag = jito[offset]
+    if (tag === "'") {
+      return jito.slice(start, offset++)
+    }
+    if (tag === "@") {
+      const dictionaryName = jito.slice(start, offset++)
+      const dict = seen.dictionaries[dictionaryName]
+      if (!dict) {
+        throw new Error(`Unknown dictionary: ${dictionaryName}`)
+      }
+      for (const value of dict) {
+        seen.push(value)
+      }
+      return parseAny()
+    }
+
+    if (tag === ".") {
+      if (offset - start <= 10) {
+        return zigzagDecode(parseB36(jito, start, offset++))
+      }
+      return toNumberMaybe(zigzagDecodeBig(parseBigB36(jito, start, offset++)))
+    }
+    if (tag === "~") {
+      const len = parseB36(jito, start, offset++)
+      start = offset
+      offset += len
+      return jito.slice(start, offset)
+    }
+    if (tag === ":") {
+      const exp = zigzagDecode(parseB36(jito, start, offset++))
+      start = offset
+      offset = skipB36(jito, offset)
+      if (jito[offset] === ".") {
+        const base = zigzagDecodeBig(parseBigB36(jito, start, offset++))
+        return Number.parseFloat(`${base}e${exp}`)
+      }
+    }
+    if (tag === "T") {
+      offset++
+      return true
+    }
+    if (tag === "F") {
+      offset++
+      return false
+    }
+    if (tag === "N") {
+      offset++
+      return null
+    }
+    if (tag === "*") {
+      const index = parseB36(jito, start, offset++)
+      if (index in seen) {
+        return seen[index]
+      }
+    }
+
+    throw jitoSyntaxError(jito, offset)
+  }
 }
 
 function jitoSyntaxError(jito: string, offset: number) {
   return new SyntaxError(`Invalid JSONito at offset ${offset}: ${JSON.stringify(jito.slice(offset, offset + 10))}`)
 }
 
-function zigzagDecode(num: bigint) {
+function zigzagDecodeBig(num: bigint) {
   return num % 2n === 0n ? num / 2n : -(num + 1n) / 2n
+}
+
+function zigzagDecode(num: number) {
+  return num % 2 === 0 ? num / 2 : -(num + 1) / 2
 }
 
 function toNumberMaybe(num: bigint) {
@@ -389,27 +400,35 @@ export function skipWhitespace(str: string, offset: number): number {
   return o
 }
 
-const inB64 = new Set(BASE64)
-
-export function skipB64(str: string, offset: number): number {
+export function skipB36(str: string, offset: number): number {
   const len = str.length
   let o = offset
-  while (o < len && inB64.has(str[o])) {
+  while (o < len) {
+    const c = str.charCodeAt(o)
+    if (c < 0x30 || (c > 0x39 && c < 0x61) || c > 0x7a) {
+      break
+    }
     o++
   }
   return o
 }
 
-const fromB64 = new Map<string, number>([...BASE64].map((c, i) => [c, i]))
+export function parseB36(jito: string, start: number, end: number): number {
+  if (end === start) {
+    return 0
+  }
+  return Number.parseInt(jito.substring(start, end), 36)
+}
 
-export function parseB64(jito: string, start: number, end: number): bigint {
+export function parseBigB36(jito: string, start: number, end: number): bigint {
   let num = 0n
   for (let i = start; i < end; i++) {
-    const digit = fromB64.get(jito[i])
+    const char = jito.charCodeAt(i)
+    const digit = char - (char < 0x40 ? 0x30 : 0x57)
     if (digit === undefined) {
-      throw new Error(`Invalid base64 digit: ${jito[i]}`)
+      throw new Error(`Invalid base36 digit: ${jito[i]}`)
     }
-    num = num * 64n + BigInt(digit)
+    num = num * 36n + BigInt(digit)
   }
   return num
 }

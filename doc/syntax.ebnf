@@ -8,8 +8,6 @@ document = { value | dictionary }, value;
 
 dictionary = varint, "@";
 
-
-
 (* 
   Comments are considered whitespace 
   and can be inserted anywhere whitespace is allowed.
@@ -31,9 +29,9 @@ value
     ( string
     | number
     | reference
-    | simple
     )
   | map | list
+  | true | false | null
   ;
 
 (* Zero or more key/value pairs, similar to JSON object *)
@@ -51,8 +49,9 @@ string = "'" | "~", { ? UTF-8 Character ? } ;
 (* power of 10 encoded using zigzag(exponent) *)
 number = { ":", varint }, ".";
 
-(* true = `!` false = `F!` null = `N!` *)
-simple = "!";
+true = "T";
+false = "F";
+null = "N";
 
 (* Integer index into current scope *)
 reference = "*";
@@ -66,25 +65,14 @@ reference = "*";
   1 -> "1"
   10 -> "a"
   35 -> "z"
-  36 -> "A"
-  61 -> "Z"
-  62 -> "-"
-  63 -> "_"
-  64 => "10"
+  36 -> "10"
 *)
-varint = { b64 };
+varint = { b36 };
 
-(*
-  This is the same digits as url-safe base64, but used as normal integer digits.
-  Note that the order is slightly different to be an extension of typical hexadecimal.
-*)
-b64
+b36
   = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7"
   | "8" | "9" | "a" | "b" | "c" | "d" | "e" | "f"
   | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n"
   | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v"
-  | "w" | "x" | "y" | "z" | "A" | "B" | "C" | "D"
-  | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L"
-  | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T"
-  | "U" | "V" | "W" | "X" | "Y" | "Z" | "-" | "_"
+  | "w" | "x" | "y" | "z"
   ;

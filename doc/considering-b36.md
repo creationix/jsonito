@@ -143,6 +143,7 @@ Going back to the sample doc in JITO
 ```
 
 It becomes:
+
 ```
 3S
   value_
@@ -218,7 +219,6 @@ which with `encodeURIComponent` double encoding is:
 %7Bvalue.onclick.(menu.(id.file.*File.popup.(menuitem.%5B(*New.1*e~CreateNewDoc())(*Open.1*9~OpenDoc())(*Close.1*a~CloseDoc())%5D)))%7D
 ```
 
-
 The original before tuning was a lot longer for context
 
 ```
@@ -272,7 +272,6 @@ value.onclick.(menu.(id.file.*File.popup.(menuitem.3!(*New.1*e~CreateNewDoc())(*
 ```
 
 And finally when double encoded with `encodeURIComponent`:
-
 
 ```
 // optimized b64 double encoded
@@ -419,11 +418,9 @@ yeah, I think the formatting rule is inline first-line is allowed if:
 - the opening token (`{` or `[`) is the first token on the line
 - or the entire first line would fit inline within the 64 chars
 
-
 ## Url Safe?
 
 Now going back to url safe encoding.  We can have a url safe variant that only tweaks the `{`, `}`, `[` and `]` chars and replace them with `(`, `)`, `(!`, and `)`.
-
 
 ```jito-url
 // Shared Values
@@ -494,7 +491,7 @@ Then there are possible future types
 - Tag Ref - `&` (not pointing into named dictionary or inline values)
 - Fixed decimal (aka cents) - `$`
 
-## Base64 Wins After all!
+## Base64 Wins After all
 
 So while we were considering Base36 to improve usage in URLs, we ended up just optimizing the Base64 system to work better with URls and fixed a major flaw in the scope system.
 
@@ -523,3 +520,7 @@ Scopes are implicit by encoding multiple values in series without a `;` delimete
 This also means we don't need to worry about nested scopes as it's no longer possible.
 
 If a stream wishes to reuse shared subvalues among events/values in the stream, it can embed external dictionary IDs and then provide a way to request those via some side channel.
+
+## Base36 is Faster
+
+While optimizing the implementation we realized that parsing speeds could be greatly sped up by using base36 integers (especially in JavaScript that has native base36 support).  So despite base64 being technically better, base36 is used for maximum performance.

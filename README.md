@@ -74,17 +74,16 @@ const decoded: unknown = JSONito.parse(jito)
 The value is printed with no spaces by default for compactness:
 
 ```jito
-{name'JSONito'nickname'b~Little Jitonew'!magic'1k.colors'[2~🟥2~🟧2~🟨2~🟩2~🟦2~🟪]}
+{name'7~JSONitonickname'b~Little Jitonew'Tmagic'2c.colors'[2~🟥2~🟧2~🟨2~🟩2~🟦2~🟪]}
 ```
 
 But coming soon is an option to pretty-print as well
 
 ```jito
-{
-  name' JSONito'
+{ name' 7~JSONito
   nickname' b~Little Jito
-  new' ! 
-  magic' 1k.
+  new' T
+  magic' 2c.
   colors' [
     2~🟥 2~🟧 2~🟨 2~🟩 2~🟦 2~🟪
   ]
@@ -101,38 +100,38 @@ You can see the latest results in every [CI commit](https://github.com/creationi
 
 | Metric             | JSON     | JSONito    | Relative Comparison                  |
 |--------------------|----------|------------|--------------------------------------|
-| **Parse Time**     | 2.61 ms  | 8.45 ms    | JSONito parse is 3.23x slower        |
-| **Stringify Time** | 1.22 ms  | 30.83 ms   | JSONito stringify is 25.22x slower   |
-| **Encoded Size**   | 1.10 MiB | 206.89 KiB | JSONito encoded is 5.46x **smaller** |
+| **Parse Time**     | 2.67 ms  | 5.09 ms    | JSONito.parse is 1.91x slower        |
+| **Stringify Time** | 1.18 ms  | 17.95 ms   | JSONito.stringify is 15.23x slower   |
+| **Encoded Size**   | 1.18 MiB | 221.33 KiB | JSONito encoded is 5.46x **smaller** |
 
 ## Gallery of Samples
 
-| JS                                       | JSON                                | JSONito                   | Comment             |
-|------------------------------------------|-------------------------------------|---------------------------|---------------------|
-| `0`                                      | `0`                                 | `.`                       | Integers            |
-| `-1`                                     | `-1`                                | `1.`                      |                     |
-| `1`                                      | `1`                                 | `2.`                      |                     |
-| `-25`                                    | `-25`                               | `N.`                      |                     |
-| `2000`                                   | `2000`                              | `-w.`                     |                     |
-| `-125000`                                | `-125000`                           | `Z2f.`                    |                     |
-| `8654321`                                | `8654321`                           | `121Ly.`                  |                     |
-| `20.24`                                  | `20.24`                             | `3:_g.`                   | Decimal             |
-| `1e100`                                  | `1e100`                             | `38:2.`                   |                     |
-| `-1e-200`                                | `-1e-200`                           | `6f:1.`                   |                     |
-| `Math.PI`                                | `3.141592653589793`                 | `t:mkEokiJF2.`            |                     |
-| `Math.sqrt(3)`                           | `1.7320508075688772`                | `v:1X4t8mn8q8.`           |                     |
-| `true`                                   | `true`                              | `!`                       | True                |
-| `false`                                  | `false`                             | `F!`                      | False               |
-| `null`                                   | `null`                              | `N!`                      | Null                |
-| `''`                                     | `""`                                | `~`                       | Empty String        |
-| `'Banana'`                               | `"Banana"`                          | `Banana'`                 | B64 String          |
-| `'Hi, World'`                            | `"Hi, World"`                       | `9~Hi, World`             | String              |
-| `'🍌'`                                   | `"🍌"`                              | `2~🍌`                    | Unicode String      |
-| `[ 1, 2, 3 ]`                            | `[1,2,3]`                           | `[2.4.6.]`                | Lists               |
-| `[ 100, 100, 100 ]`                      | `[100,100,100]`                     | `38.[***]`                | Lists with Pointers |
-| `{ a: 1, b: 2, c: 3 }`                   | `{"a":1,"b":2,"c":3}`               | `{a'2.b'4.c'6.}`          | Maps                |
-| `[ { name: 'Alice' }, { name: 'Bob' } ]` | `[{"name":"Alice"},{"name":"Bob"}]` | `name'[{*Alice'}{*Bob'}]` | Repeated Keys       |
-| `new Map([[1,2],[3,4]])`                 | N/A                                 | `{2.4.6.8.}`              | Non-string Keys     |
+| JS                                       | JSON                                | JSONito                     | Comment             |
+|------------------------------------------|-------------------------------------|-----------------------------|---------------------|
+| `0`                                      | `0`                                 | `.`                         | Integers            |
+| `-1`                                     | `-1`                                | `1.`                        |                     |
+| `1`                                      | `1`                                 | `2.`                        |                     |
+| `-25`                                    | `-25`                               | `1d.`                       |                     |
+| `2000`                                   | `2000`                              | `334.`                      |                     |
+| `-125000`                                | `-125000`                           | `5cwf.`                     |                     |
+| `8654321`                                | `8654321`                           | `aazfm.`                    |                     |
+| `20.24`                                  | `20.24`                             | `3:34g.`                    | Decimal             |
+| `1e100`                                  | `1e100`                             | `5k:2.`                     |                     |
+| `-1e-200`                                | `-1e-200`                           | `b3:1.`                     |                     |
+| `Math.PI`                                | `3.141592653589793`                 | `t:1pv7bhcuvcy.`            |                     |
+| `Math.sqrt(3)`                           | `1.7320508075688772`                | `v:9h37r4jzxc8.`            |                     |
+| `true`                                   | `true`                              | `T`                         | True                |
+| `false`                                  | `false`                             | `F`                         | False               |
+| `null`                                   | `null`                              | `N`                         | Null                |
+| `''`                                     | `""`                                | `~`                         | Empty String        |
+| `'banana'`                               | `"banana"`                          | `banana'`                   | B36 String          |
+| `'Hi, World'`                            | `"Hi, World"`                       | `9~Hi, World`               | String              |
+| `'🍌'`                                   | `"🍌"`                              | `2~🍌`                      | Unicode String      |
+| `[ 1, 2, 3 ]`                           | `[ 1, 2, 3 ]`                      | `[2.4.6.]`                  | Lists               |
+| `[ 100, 100, 100 ]`                      | `[ 100, 100, 100 ]`                 | `5k.[***]`                  | Lists with Pointers |
+| `{ a: 1, b: 2, c: 3 }`                   | `{"a":1,"b":2,"c":3}`               | `{a'2.b'4.c'6.}`            | Maps                |
+| `[ { name: 'Alice' }, { name: 'Bob' } ]` | `[{"name":"Alice"},{"name":"Bob"}]` | `name'[{*5~Alice}{*3~Bob}]` | Repeated Keys       |
+| `new Map([[1,2],[3,4]])`                 | N/A                                 | `{2.4.6.8.}`                | Non-string Keys     |
 
 ## The Syntax
 
@@ -144,9 +143,9 @@ Jito does away with delimiters like `:` or `,`, and whitespace is entirely insig
 
 ![Railroad Diagram for Comment](img/syntax-comment.png)
 
-Containers are still enclosed by `{`, `}`, `[`, and `]`, just like in JSON. However, everything else is prefixed by a Base64 integer followed by a type tag.
+Containers are still enclosed by `{`, `}`, `[`, and `]`, just like in JSON. However, everything else is prefixed by a Base36 integer followed by a type tag.
 
-![Railroad Diagram for B64](img/syntax-b64.png)
+![Railroad Diagram for B36](img/syntax-b36.png)
 
 One of the key ways Jito reduces encoding size is by allowing repeated values to be written just once and then referenced later. This is achieved by prefixing a value with zero or more other values — each one in the chain can `reference` any previous values.
 
