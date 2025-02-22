@@ -52,7 +52,7 @@ export function stringify(rootValue: unknown, options: EncodeOptions = {}): stri
 function writeKey(key: string, parts: string[], known: Known) {
   const index = known.get(key)
   if (index !== undefined) {
-    return parts.push(encodeB36(BigInt(index)), "*")
+    return parts.push(encodeB36(index), "*")
   }
   return writeString(key, parts)
 }
@@ -60,7 +60,7 @@ function writeKey(key: string, parts: string[], known: Known) {
 function writeAny(val: unknown, parts: string[], known: Known) {
   const index = known.get(val)
   if (index !== undefined) {
-    return parts.push(encodeB36(BigInt(index)), "*")
+    return parts.push(encodeB36(index), "*")
   }
   if (val === null) {
     return parts.push("N")
@@ -89,17 +89,16 @@ function writeAny(val: unknown, parts: string[], known: Known) {
   throw new Error(`TODO: implement writeAny for ${typeof val}`)
 }
 
-const BASE36 = "0123456789abcdefghijklmnopqrstuvwxyz"
-
-export function encodeB36(num: bigint) {
-  if (num === 0n) {
-    return ""
-  }
-  return num.toString(36)
+export function encodeB36(num: number) {
+  return num === 0 ? "" : num.toString(36)
 }
 
-export function encodeSignedB36(num: bigint) {
-  return encodeB36(num < 0n ? -num * 2n - 1n : num * 2n)
+export function encodeBigB36(num: bigint) {
+  return num === 0n ? "" : num.toString(36)
+}
+
+export function encodeSignedBigB36(num: bigint) {
+  return encodeBigB36(num < 0n ? -num * 2n - 1n : num * 2n)
 }
 
 function writeNumber(num: number, parts: string[]) {
@@ -107,11 +106,11 @@ function writeNumber(num: number, parts: string[]) {
   if (exp >= 0 && exp <= 4) {
     return writeInteger(BigInt(num), parts)
   }
-  return parts.push(encodeSignedB36(BigInt(exp)), ":", encodeSignedB36(BigInt(base)), ".")
+  return parts.push(encodeSignedBigB36(BigInt(exp)), ":", encodeSignedBigB36(BigInt(base)), ".")
 }
 
 function writeInteger(num: bigint, parts: string[]) {
-  return parts.push(encodeSignedB36(num), ".")
+  return parts.push(encodeSignedBigB36(num), ".")
 }
 
 const DEC_PARTS = /^(-?\d+)(?:\.(\d+))?e[+]?([-]?\d+)$/
@@ -131,7 +130,7 @@ function writeString(str: string, parts: string[]) {
   if (B36_STR.test(str)) {
     return parts.push(str, "'")
   }
-  return parts.push(encodeB36(BigInt(str.length)), "~", str)
+  return parts.push(encodeB36(str.length), "~", str)
 }
 
 function writeArray(arr: unknown[], parts: string[], known: Known) {
@@ -190,7 +189,7 @@ export function writeDuplicates(rootVal: unknown, parts: string[], known: Known,
     const enc = subParts.join("")
     subParts.length = 0
     // Filter out any values that are cheaper to encode directly
-    const refCost = encodeB36(BigInt(known.size)).length + 1
+    const refCost = encodeB36(known.size).length + 1
     const encodedCost = enc.length
     if (encodedCost <= refCost) {
       continue
@@ -401,8 +400,6 @@ export function skipWhitespace(str: string, offset: number): number {
   return o
 }
 
-const inB36 = new Set(BASE36)
-
 export function skipB36(str: string, offset: number): number {
   const len = str.length
   let o = offset
@@ -416,8 +413,6 @@ export function skipB36(str: string, offset: number): number {
   return o
 }
 
-const fromB36 = new Map<string, number>([...BASE36].map((c, i) => [c, i]))
-
 export function parseB36(jito: string, start: number, end: number): number {
   if (end === start) {
     return 0
@@ -426,15 +421,10 @@ export function parseB36(jito: string, start: number, end: number): number {
 }
 
 export function parseBigB36(jito: string, start: number, end: number): bigint {
-  if (end === start) {
-    return 0n
-  }
-  if (end - start <= 10) {
-    return BigInt(Number.parseInt(jito.substring(start, end), 36))
-  }
   let num = 0n
   for (let i = start; i < end; i++) {
-    const digit = fromB36.get(jito[i])
+    const char = jito.charCodeAt(i)
+    const digit = char - (char < 0x40 ? 0x30 : 0x57)
     if (digit === undefined) {
       throw new Error(`Invalid base36 digit: ${jito[i]}`)
     }

@@ -2,8 +2,8 @@ import { expect, test } from "bun:test"
 import {
   // decoder functions
   stringify,
-  encodeB36,
-  encodeSignedB36,
+  encodeBigB36,
+  encodeSignedBigB36,
   splitDecimal,
   // encoder functions
   skipWhitespace,
@@ -34,34 +34,34 @@ test("splitDecimal", () => {
 })
 
 test("encode B36 digits", () => {
-  expect(encodeB36(0n)).toEqual("")
-  expect(encodeB36(1n)).toEqual("1")
-  expect(encodeB36(9n)).toEqual("9")
-  expect(encodeB36(10n)).toEqual("a")
-  expect(encodeB36(35n)).toEqual("z")
-  expect(encodeB36(36n)).toEqual("10")
-  expect(encodeB36(1375732n)).toEqual("this")
-  expect(encodeB36(676n)).toEqual("is")
-  expect(encodeB36(62749271102n)).toEqual("strange")
-  expect(encodeB36(1767707668033969n)).toEqual("helloworld")
-  expect(encodeB36(BigInt(Number.MAX_SAFE_INTEGER))).toEqual("2gosa7pa2gv")
-  expect(encodeB36(BigInt(Number.MAX_SAFE_INTEGER) + 1n)).toEqual("2gosa7pa2gw")
-  expect(encodeB36(BigInt(Number.MAX_SAFE_INTEGER) - 1n)).toEqual("2gosa7pa2gu")
-  expect(encodeSignedB36(0n)).toEqual("")
-  expect(encodeSignedB36(-1n)).toEqual("1")
-  expect(encodeSignedB36(1n)).toEqual("2")
-  expect(encodeSignedB36(-9n)).toEqual("h")
-  expect(encodeSignedB36(9n)).toEqual("i")
-  expect(encodeSignedB36(-10n)).toEqual("j")
-  expect(encodeSignedB36(10n)).toEqual("k")
-  expect(encodeSignedB36(-35n)).toEqual("1x")
-  expect(encodeSignedB36(35n)).toEqual("1y")
-  expect(encodeSignedB36(-64n)).toEqual("3j")
-  expect(encodeSignedB36(64n)).toEqual("3k")
-  expect(encodeSignedB36(687866n)).toEqual("this")
-  expect(encodeSignedB36(338n)).toEqual("is")
-  expect(encodeSignedB36(31374635551n)).toEqual("strange")
-  expect(encodeSignedB36(100683761859705616735460904644n)).toEqual("jitolovesbignumbers")
+  expect(encodeBigB36(0n)).toEqual("")
+  expect(encodeBigB36(1n)).toEqual("1")
+  expect(encodeBigB36(9n)).toEqual("9")
+  expect(encodeBigB36(10n)).toEqual("a")
+  expect(encodeBigB36(35n)).toEqual("z")
+  expect(encodeBigB36(36n)).toEqual("10")
+  expect(encodeBigB36(1375732n)).toEqual("this")
+  expect(encodeBigB36(676n)).toEqual("is")
+  expect(encodeBigB36(62749271102n)).toEqual("strange")
+  expect(encodeBigB36(1767707668033969n)).toEqual("helloworld")
+  expect(encodeBigB36(BigInt(Number.MAX_SAFE_INTEGER))).toEqual("2gosa7pa2gv")
+  expect(encodeBigB36(BigInt(Number.MAX_SAFE_INTEGER) + 1n)).toEqual("2gosa7pa2gw")
+  expect(encodeBigB36(BigInt(Number.MAX_SAFE_INTEGER) - 1n)).toEqual("2gosa7pa2gu")
+  expect(encodeSignedBigB36(0n)).toEqual("")
+  expect(encodeSignedBigB36(-1n)).toEqual("1")
+  expect(encodeSignedBigB36(1n)).toEqual("2")
+  expect(encodeSignedBigB36(-9n)).toEqual("h")
+  expect(encodeSignedBigB36(9n)).toEqual("i")
+  expect(encodeSignedBigB36(-10n)).toEqual("j")
+  expect(encodeSignedBigB36(10n)).toEqual("k")
+  expect(encodeSignedBigB36(-35n)).toEqual("1x")
+  expect(encodeSignedBigB36(35n)).toEqual("1y")
+  expect(encodeSignedBigB36(-64n)).toEqual("3j")
+  expect(encodeSignedBigB36(64n)).toEqual("3k")
+  expect(encodeSignedBigB36(687866n)).toEqual("this")
+  expect(encodeSignedBigB36(338n)).toEqual("is")
+  expect(encodeSignedBigB36(31374635551n)).toEqual("strange")
+  expect(encodeSignedBigB36(100683761859705616735460904644n)).toEqual("jitolovesbignumbers")
 })
 
 test("encode integers", () => {
