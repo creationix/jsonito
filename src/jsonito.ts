@@ -305,8 +305,10 @@ export function parse(jito: string, opts: DecodeOptions = {}): unknown {
     }
 
     if (tag === ".") {
-      const b36 = parseBigB36(jito, start, offset++)
-      return toNumberMaybe(zigzagDecode(b36))
+      if (offset - start <= 10) {
+        return zigzagDecode(parseB36(jito, start, offset++))
+      }
+      return toNumberMaybe(zigzagDecodeBig(parseBigB36(jito, start, offset++)))
     }
     if (tag === "~") {
       const len = parseB36(jito, start, offset++)
@@ -315,11 +317,11 @@ export function parse(jito: string, opts: DecodeOptions = {}): unknown {
       return jito.slice(start, offset)
     }
     if (tag === ":") {
-      const exp = zigzagDecode(parseBigB36(jito, start, offset++))
+      const exp = zigzagDecode(parseB36(jito, start, offset++))
       start = offset
       offset = skipB36(jito, offset)
       if (jito[offset] === ".") {
-        const base = zigzagDecode(parseBigB36(jito, start, offset++))
+        const base = zigzagDecodeBig(parseBigB36(jito, start, offset++))
         return Number.parseFloat(`${base}e${exp}`)
       }
     }
@@ -350,8 +352,12 @@ function jitoSyntaxError(jito: string, offset: number) {
   return new SyntaxError(`Invalid JSONito at offset ${offset}: ${JSON.stringify(jito.slice(offset, offset + 10))}`)
 }
 
-function zigzagDecode(num: bigint) {
+function zigzagDecodeBig(num: bigint) {
   return num % 2n === 0n ? num / 2n : -(num + 1n) / 2n
+}
+
+function zigzagDecode(num: number) {
+  return num % 2 === 0 ? num / 2 : -(num + 1) / 2
 }
 
 function toNumberMaybe(num: bigint) {
