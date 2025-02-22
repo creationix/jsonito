@@ -4,7 +4,7 @@ import { parse, stringify } from "./jsonito.ts"
 test("benchmark pokemon", async () => {
   const pokemon: unknown[] = []
   const num = 4
-  const start = Math.floor(Math.random() * 100 - num)
+  const start = Math.floor(Math.random() * 100 - num) + 1
   const end = start + num
   for (let i = start; i <= end; i++) {
     const url = `https://pokeapi.co/api/v2/pokemon/${i}/`
