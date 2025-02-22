@@ -74,7 +74,7 @@ const decoded: unknown = JSONito.parse(jito)
 The value is printed with no spaces by default for compactness:
 
 ```jito
-{name'JSONito'nickname'b~Little Jitonew'!magic'1k.colors'[4~🟥4~🟧4~🟨4~🟩4~🟦4~🟪]}
+{name'JSONito'nickname'b~Little Jitonew'!magic'1k.colors'[2~🟥2~🟧2~🟨2~🟩2~🟦2~🟪]}
 ```
 
 But coming soon is an option to pretty-print as well
@@ -86,7 +86,7 @@ But coming soon is an option to pretty-print as well
   new' ! 
   magic' 1k.
   colors' [
-    4~🟥 4~🟧 4~🟨 4~🟩 4~🟦 4~🟪
+    2~🟥 2~🟧 2~🟨 2~🟩 2~🟦 2~🟪
   ]
 }
 ```
