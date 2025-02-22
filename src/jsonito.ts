@@ -299,18 +299,17 @@ export function parseAny(jito: string, offset: number, seen: Seen): { value: unk
     return parseAny(jito, end + 1, seen)
   }
 
-  const b36 = parseBigB36(jito, start, end)
   if (tag === ".") {
-    return { value: toNumberMaybe(zigzagDecode(b36)), offset: end + 1 }
+    return { value: toNumberMaybe(zigzagDecode(parseBigB36(jito, start, end))), offset: end + 1 }
   }
   if (tag === "~") {
-    const len = Number(b36)
+    const len = parseB36(jito, start, end)
     return { value: jito.slice(end + 1, end + 1 + len), offset: end + 1 + len }
   }
   if (tag === ":") {
     const end2 = skipB36(jito, end + 1)
     if (jito[end2] === ".") {
-      const exp = zigzagDecode(b36)
+      const exp = zigzagDecode(parseBigB36(jito, start, end))
       const base = zigzagDecode(parseBigB36(jito, end + 1, end2))
       return { value: Number.parseFloat(`${base}e${exp}`), offset: end2 + 1 }
     }
@@ -325,7 +324,7 @@ export function parseAny(jito: string, offset: number, seen: Seen): { value: unk
     return { value: null, offset: end + 1 }
   }
   if (tag === "*") {
-    const value = seen[Number(b36)]
+    const value = seen[parseB36(jito, start, end)]
     if (value !== undefined) {
       return { value, offset: end + 1 }
     }
@@ -399,6 +398,13 @@ export function skipB36(str: string, offset: number): number {
 }
 
 const fromB36 = new Map<string, number>([...BASE36].map((c, i) => [c, i]))
+
+export function parseB36(jito: string, start: number, end: number): number {
+  if (end === start) {
+    return 0
+  }
+  return Number.parseInt(jito.substring(start, end), 36)
+}
 
 export function parseBigB36(jito: string, start: number, end: number): bigint {
   if (end === start) {
