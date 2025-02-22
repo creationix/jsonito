@@ -143,9 +143,9 @@ Jito does away with delimiters like `:` or `,`, and whitespace is entirely insig
 
 ![Railroad Diagram for Comment](img/syntax-comment.png)
 
-Containers are still enclosed by `{`, `}`, `[`, and `]`, just like in JSON. However, everything else is prefixed by a Base64 integer followed by a type tag.
+Containers are still enclosed by `{`, `}`, `[`, and `]`, just like in JSON. However, everything else is prefixed by a Base36 integer followed by a type tag.
 
-![Railroad Diagram for B64](img/syntax-b64.png)
+![Railroad Diagram for B36](img/syntax-b36.png)
 
 One of the key ways Jito reduces encoding size is by allowing repeated values to be written just once and then referenced later. This is achieved by prefixing a value with zero or more other values — each one in the chain can `reference` any previous values.
 
