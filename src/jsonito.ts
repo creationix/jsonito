@@ -435,7 +435,6 @@ export function parseAny(jito: string, offset: number, seen: Seen): { value: unk
       // "n"
       return { value: 0 / 0, offset: end + 1 }
     }
-    console.log("Invalid b64", b64, String.fromCharCode(b64))
   }
   if (tag === "*") {
     const value = seen[parseB64(jito, start, end)]

@@ -34,14 +34,14 @@ export function stringify(rootValue, options = {}) {
 function writeKey(key, parts, known) {
   const index = known.get(key)
   if (index !== undefined) {
-    return parts.push(encodeB64(BigInt(index)), "*")
+    return parts.push(encodeB64(index), "*")
   }
   return writeString(key, parts)
 }
 function writeAny(val, parts, known) {
   const index = known.get(val)
   if (index !== undefined) {
-    return parts.push(encodeB64(BigInt(index)), "*")
+    return parts.push(encodeB64(index), "*")
   }
   if (val === null) {
     return parts.push("N!")
@@ -53,7 +53,7 @@ function writeAny(val, parts, known) {
     return writeNumber(val, parts)
   }
   if (typeof val === "bigint") {
-    return writeInteger(val, parts)
+    return writeBigint(val, parts)
   }
   if (typeof val === "string") {
     return writeString(val, parts)
@@ -71,6 +71,19 @@ function writeAny(val, parts, known) {
 }
 const BASE64 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_"
 export function encodeB64(num) {
+  if (num === 0) {
+    return ""
+  }
+  const digits = []
+  let n = num
+  while (n > 0) {
+    const digit = n % 64
+    n = Math.floor(n / 64)
+    digits.push(BASE64[digit])
+  }
+  return digits.reverse().join("")
+}
+export function encodeBigB64(num) {
   const digits = []
   let n = num
   while (n > 0n) {
@@ -81,17 +94,78 @@ export function encodeB64(num) {
   return digits.reverse().join("")
 }
 export function encodeSignedB64(num) {
-  return encodeB64(num < 0n ? -num * 2n - 1n : num * 2n)
+  // For numbers in the i32 range, we can use fast zigzag
+  if (num >= -2147483648 && num < 2147483648) {
+    // zigzag encode the i32 value
+    return encodeB64(((num >> 31) ^ (num << 1)) >>> 0)
+  }
+  // For numbers in the i52 range, we can still use zigzag
+  if (num >= -4503599627370495 && num <= 4503599627370495) {
+    return encodeB64(num < 0 ? num * -2 - 1 : num * 2)
+  }
+  // For numbers outside the i52 range, we need to use bigints
+  return encodeSignedBigB64(BigInt(num))
+}
+export function encodeSignedBigB64(num) {
+  return encodeBigB64(num < 0n ? num * -2n - 1n : num * 2n)
+}
+export function parseSignedB64(jito, start, end) {
+  // For numbers in the i32 range, we can use fast zigzag
+  if (end - start <= 5) {
+    const b64 = parseB64(jito, start, end)
+    return (b64 >> 1) ^ -(b64 & 1)
+  }
+  // For numbers in the i52 range, we can still use zigzag
+  if (end - start <= 8) {
+    const b64 = parseB64(jito, start, end)
+    return b64 % 2 === 0 ? b64 / 2 : -(b64 + 1) / 2
+  }
+  // For numbers outside the i52 range, we need to use bigints
+  return Number(parseSignedBigB64(jito, start, end))
+}
+export function parseSignedBigB64(jito, start, end) {
+  const b64 = parseBigB64(jito, start, end)
+  return b64 % 2n === 0n ? b64 / 2n : -(b64 + 1n) / 2n
+}
+export function decodeSignedB64(jito) {
+  return parseSignedB64(jito, 0, jito.length)
+}
+export function decodeSignedBigB64(jito) {
+  const num = parseBigB64(jito, 0, jito.length)
+  return num % 2n === 0n ? num / 2n : -(num + 1n) / 2n
+}
+export function decodeBigB64(jito) {
+  return parseBigB64(jito, 0, jito.length)
+}
+export function decodeB64(jito) {
+  return parseB64(jito, 0, jito.length)
 }
 function writeNumber(num, parts) {
+  if (Number.isNaN(num)) {
+    return parts.push("n!")
+  }
+  if (num === 1 / 0) {
+    return parts.push("I!")
+  }
+  if (num === -1 / 0) {
+    return parts.push("i!")
+  }
   const { base, exp } = splitDecimal(num)
   if (exp >= 0 && exp <= 4) {
-    return writeInteger(BigInt(num), parts)
+    return writeInteger(num, parts)
   }
-  return parts.push(encodeSignedB64(BigInt(exp)), ":", encodeSignedB64(BigInt(base)), ".")
+  return parts.push(
+    encodeSignedB64(exp),
+    ":",
+    typeof base === "bigint" ? encodeSignedBigB64(base) : encodeSignedB64(base),
+    ".",
+  )
 }
 function writeInteger(num, parts) {
-  return parts.push(encodeSignedB64(num), ".")
+  return parts.push(typeof num === "bigint" ? encodeSignedBigB64(num) : encodeSignedB64(num), ".")
+}
+function writeBigint(num, parts) {
+  return parts.push(encodeSignedBigB64(num), ".")
 }
 const DEC_PARTS = /^(-?\d+)(?:\.(\d+))?e[+]?([-]?\d+)$/
 export function splitDecimal(num) {
@@ -100,7 +174,8 @@ export function splitDecimal(num) {
     throw new Error(`Failed to split decimal for ${num}`)
   }
   const [, b1, b2 = "", e1] = match
-  const base = Number.parseInt(b1 + b2, 10)
+  const baseStr = b1 + b2
+  const base = baseStr.length < 16 ? Number.parseInt(baseStr, 10) : toNumberMaybe(BigInt(baseStr))
   const exp = Number.parseInt(e1, 10) - b2.length
   return { base, exp }
 }
@@ -108,7 +183,7 @@ function writeString(str, parts) {
   if (B64_STR.test(str)) {
     return parts.push(str, "'")
   }
-  return parts.push(encodeB64(BigInt(str.length)), "~", str)
+  return parts.push(encodeB64(str.length), "~", str)
 }
 function writeArray(arr, parts, known) {
   parts.push("[")
@@ -158,7 +233,7 @@ export function writeDuplicates(rootVal, parts, known, willKnow) {
     const enc = subParts.join("")
     subParts.length = 0
     // Filter out any values that are cheaper to encode directly
-    const refCost = encodeB64(BigInt(known.size)).length + 1
+    const refCost = encodeB64(known.size).length + 1
     const encodedCost = enc.length
     if (encodedCost <= refCost) {
       continue
@@ -259,35 +334,57 @@ export function parseAny(jito, offset, seen) {
     }
     return parseAny(jito, end + 1, seen)
   }
-  const b64 = parseB64(jito, start, end)
   if (tag === ".") {
-    return { value: toNumberMaybe(zigzagDecode(b64)), offset: end + 1 }
+    if (end - start <= 8) {
+      return { value: parseSignedB64(jito, start, end), offset: end + 1 }
+    }
+    return { value: toNumberMaybe(parseSignedBigB64(jito, start, end)), offset: end + 1 }
   }
   if (tag === "~") {
-    const len = Number(b64)
+    const len = parseB64(jito, start, end)
     return { value: jito.slice(end + 1, end + 1 + len), offset: end + 1 + len }
   }
   if (tag === ":") {
     const end2 = skipB64(jito, end + 1)
     if (jito[end2] === ".") {
-      const exp = zigzagDecode(b64)
-      const base = zigzagDecode(parseB64(jito, end + 1, end2))
+      const exp = parseSignedB64(jito, start, end)
+      let base
+      if (end2 - end - 1 <= 8) {
+        base = parseSignedB64(jito, end + 1, end2)
+      }
+      base = parseSignedBigB64(jito, end + 1, end2)
       return { value: Number.parseFloat(`${base}e${exp}`), offset: end2 + 1 }
     }
   }
   if (tag === "!") {
-    if (b64 === 0n) {
+    const b64 = parseB64(jito, start, end)
+    if (b64 === 0) {
+      // ""
       return { value: true, offset: end + 1 }
     }
-    if (b64 === 41n) {
+    if (b64 === 41) {
+      // "F"
       return { value: false, offset: end + 1 }
     }
-    if (b64 === 49n) {
+    if (b64 === 49) {
+      // "N"
       return { value: null, offset: end + 1 }
+    }
+    if (b64 === 44) {
+      // "I"
+      return { value: 1 / 0, offset: end + 1 }
+    }
+    if (b64 === 18) {
+      // "i"
+      return { value: -1 / 0, offset: end + 1 }
+    }
+    if (b64 === 23) {
+      // "n"
+      return { value: 0 / 0, offset: end + 1 }
     }
   }
   if (tag === "*") {
-    const value = seen[Number(b64)]
+    const value = seen[parseB64(jito, start, end)]
     if (value !== undefined) {
       return { value, offset: end + 1 }
     }
@@ -296,9 +393,6 @@ export function parseAny(jito, offset, seen) {
 }
 function jitoSyntaxError(jito, offset) {
   return new SyntaxError(`Invalid JSONito at offset ${offset}: ${JSON.stringify(jito.slice(offset, offset + 10))}`)
-}
-function zigzagDecode(num) {
-  return num % 2n === 0n ? num / 2n : -(num + 1n) / 2n
 }
 function toNumberMaybe(num) {
   if (num > Number.MAX_SAFE_INTEGER || num < Number.MIN_SAFE_INTEGER) {
@@ -348,8 +442,19 @@ export function skipB64(str, offset) {
   }
   return o
 }
-const fromB64 = new Map([...BASE64].map((c, i) => [c, i]))
 export function parseB64(jito, start, end) {
+  let num = 0
+  for (let i = start; i < end; i++) {
+    const digit = fromB64.get(jito[i])
+    if (digit === undefined) {
+      throw new Error(`Invalid base64 digit: ${jito[i]}`)
+    }
+    num = num * 64 + digit
+  }
+  return num
+}
+const fromB64 = new Map([...BASE64].map((c, i) => [c, i]))
+export function parseBigB64(jito, start, end) {
   let num = 0n
   for (let i = start; i < end; i++) {
     const digit = fromB64.get(jito[i])
