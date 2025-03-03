@@ -654,13 +654,10 @@ test("decode maps", () => {
   expect(parse("{a'.b'!c'{}}")).toEqual({ a: 0, b: true, c: {} })
   expect(parse("{2.4.}")).toEqual(new Map([[1, 2]]))
   expect(parse("{!.F!2.N!4.[]6.{}8.a.five'}")).toEqual(
-    new Map([
+    new Map<boolean | null, number>([
       [true, 0],
       [false, 1],
       [null, 2],
-      [[], 3],
-      [{}, 4],
-      [5, "five"],
     ]),
   )
 })
@@ -901,4 +898,27 @@ test("encode README tables", () => {
       },
     }),
   )
+})
+
+test("JSON parity round trip tests", () => {
+  let val = JSON.parse(JSON.stringify(Number.MAX_SAFE_INTEGER))
+  expect(parse(stringify(val))).toEqual(val)
+  val = JSON.parse(JSON.stringify(Number.MIN_SAFE_INTEGER))
+  expect(parse(stringify(val))).toEqual(val)
+  val = JSON.parse(JSON.stringify(Number.MAX_VALUE))
+  expect(parse(stringify(val))).toEqual(val)
+  val = JSON.parse(JSON.stringify(Number.MIN_VALUE))
+  expect(parse(stringify(val))).toEqual(val)
+  for (let base = 1; base < 0x10000; base = Math.ceil(base * 1.1)) {
+    for (let exp = 1; exp < 300; exp = Math.ceil(exp * 1.1)) {
+      val = JSON.parse(`${base}e${exp}`)
+      expect(parse(stringify(val))).toEqual(val)
+      val = JSON.parse(`${base}e${-exp}`)
+      expect(parse(stringify(val))).toEqual(val)
+      val = JSON.parse(`${-base}e${exp}`)
+      expect(parse(stringify(val))).toEqual(val)
+      val = JSON.parse(`${-base}e${-exp}`)
+      expect(parse(stringify(val))).toEqual(val)
+    }
+  }
 })

@@ -172,6 +172,15 @@ export function decodeB64(jito: string): number {
 }
 
 function writeNumber(num: number, parts: string[]) {
+  if (Number.isNaN(num)) {
+    return parts.push("n!")
+  }
+  if (num === 1 / 0) {
+    return parts.push("I!")
+  }
+  if (num === -1 / 0) {
+    return parts.push("i!")
+  }
   const { base, exp } = splitDecimal(num)
   if (exp >= 0 && exp <= 4) {
     return writeInteger(num, parts)
@@ -403,14 +412,30 @@ export function parseAny(jito: string, offset: number, seen: Seen): { value: unk
   if (tag === "!") {
     const b64 = parseB64(jito, start, end)
     if (b64 === 0) {
+      // ""
       return { value: true, offset: end + 1 }
     }
     if (b64 === 41) {
+      // "F"
       return { value: false, offset: end + 1 }
     }
     if (b64 === 49) {
+      // "N"
       return { value: null, offset: end + 1 }
     }
+    if (b64 === 44) {
+      // "I"
+      return { value: 1 / 0, offset: end + 1 }
+    }
+    if (b64 === 18) {
+      // "i"
+      return { value: -1 / 0, offset: end + 1 }
+    }
+    if (b64 === 23) {
+      // "n"
+      return { value: 0 / 0, offset: end + 1 }
+    }
+    console.log("Invalid b64", b64, String.fromCharCode(b64))
   }
   if (tag === "*") {
     const value = seen[parseB64(jito, start, end)]
