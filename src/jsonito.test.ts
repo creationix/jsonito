@@ -654,10 +654,13 @@ test("decode maps", () => {
   expect(parse("{a'.b'!c'{}}")).toEqual({ a: 0, b: true, c: {} })
   expect(parse("{2.4.}")).toEqual(new Map([[1, 2]]))
   expect(parse("{!.F!2.N!4.[]6.{}8.a.five'}")).toEqual(
-    new Map<boolean | null, number>([
+    new Map([
       [true, 0],
       [false, 1],
       [null, 2],
+      [[], 3],
+      [{}, 4],
+      [5, "five"],
     ]),
   )
 })

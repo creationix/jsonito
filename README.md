@@ -101,9 +101,9 @@ You can see the latest results in every [CI commit](https://github.com/creationi
 
 | Metric             | JSON     | JSONito    | Relative Comparison                  |
 |--------------------|----------|------------|--------------------------------------|
-| **Parse Time**     | 2.61 ms  | 8.45 ms    | JSONito parse is 3.23x slower        |
-| **Stringify Time** | 1.22 ms  | 30.83 ms   | JSONito stringify is 25.22x slower   |
-| **Encoded Size**   | 1.10 MiB | 206.89 KiB | JSONito encoded is 5.46x **smaller** |
+| **Parse Time**     | 4.05 ms  | 7.92 ms    | JSONito parse is 1.95x slower        |
+| **Stringify Time** | 1.64 ms  | 29.09 ms   | JSONito stringify is 217.78x slower   |
+| **Encoded Size**   | 1.33 MiB | 239.43 KiB | JSONito encoded is 5.70x **smaller** |
 
 ## Gallery of Samples
 
