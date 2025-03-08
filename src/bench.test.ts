@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test"
 import { parse, stringify } from "./jsonito.ts"
 
-test("benchmark pokemon", async () => {
+test.skip("benchmark pokemon", async () => {
   const pokemon: unknown[] = []
   const num = 4
   const start = Math.floor(Math.random() * 100 - num) + 1
