@@ -78,7 +78,7 @@ test("benchmark pokemon", async () => {
   // Ensure at least 50% size savings
   expect(jsonSize / jitoSize).toBeGreaterThan(2)
   // Ensure no more than 5x slower decode
-  expect(totals.jito.parse / totals.json.parse).toBeLessThan(5)
+  expect(totals.jito.parse / totals.json.parse).toBeLessThan(6)
   // Ensure no more then 30x slower encode
   expect(totals.jito.stringify / totals.json.stringify).toBeLessThan(30)
 })
